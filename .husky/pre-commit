@@ -1,0 +1,38 @@
+#!/usr/bin/env sh
+
+
+echo '👷 Styling, testing and building your project before committing'
+
+npm run check-format ||
+(
+    echo 'Your code has some styling issues.
+            Prettier Check Failed. Run npm run format, add changes and try commit again.';
+    false;
+)
+# Check ESLint Standards
+npm run lint ||
+(
+        echo '👋 Please fix your code syntax and semantics.
+                ESLint Check Failed. Make the required changes listed above, add changes and try to commit again.'
+        false; 
+)
+
+# Check tsconfig standards
+npm run check-types ||
+(
+    echo 'Failed Type check. ❌
+            Are you seriously trying to write that? Make the changes required above.'
+    false;
+)
+
+# Check for warnings
+npm run build --max-warnings=0 ||
+(
+    echo 'Error... Because your build faild or contains warnings ❗👷🔨❗
+            Next build failed: Fix the errors and warnings above to see why. 
+    '
+    false;
+)
+
+# If everything passes... Now we can commit
+echo 'You win this time... I am committing this now. ✅✅'

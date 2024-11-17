@@ -3,14 +3,23 @@ import { useState } from "react";
 import { Layers, Disc } from "lucide-react";
 import { Button } from "./components/ui/button";
 import { Input } from "./components/ui/input";
+import AppleFortuneGame from "./apple";
+import { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 
 export default function Component() {
   const [balance, setBalance] = useState(90);
   const [inputValue, setInputValue] = useState("10");
+  const [gameActive, setGameActive] = useState(false);
 
   const handleReset = () => {
     setBalance(100);
     setInputValue("");
+    setGameActive(false);
+    toast.success("Balance reset to 100!", {
+      icon: "🔄",
+      duration: 2000,
+    });
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -24,28 +33,78 @@ export default function Component() {
     const amount = parseInt(inputValue) || 0;
     if (amount <= balance) {
       setBalance((prev) => prev - amount);
+      setGameActive(true);
+      toast(`Starting game with ${amount} coins`, {
+        icon: "🎮",
+        duration: 2000,
+      });
+    } else {
+      toast.error("Insufficient balance!", {
+        icon: "⚠️",
+        duration: 2000,
+      });
     }
   };
 
-  const handleMin = () => setInputValue("1");
-  const handleMax = () => setInputValue(balance.toString());
+  const handleGameWin = (winAmount: number) => {
+    setBalance((prev) => prev + winAmount);
+    setGameActive(false);
+  };
+
+  const handleGameLose = () => {
+    setGameActive(false);
+  };
+
+  const handleMin = () => {
+    setInputValue("1");
+    toast("Set to minimum bet", {
+      icon: "⬇️",
+      duration: 1000,
+    });
+  };
+
+  const handleMax = () => {
+    setInputValue(balance.toString());
+    toast("Set to maximum bet", {
+      icon: "⬆️",
+      duration: 1000,
+    });
+  };
+
   const handleDouble = () => {
     const current = parseInt(inputValue) || 0;
-    setInputValue(Math.min(current * 2, balance).toString());
+    const newValue = Math.min(current * 2, balance);
+    setInputValue(newValue.toString());
+    toast("Doubled bet amount", {
+      icon: "✖️",
+      duration: 1000,
+    });
   };
+
   const handleHalf = () => {
     const current = parseInt(inputValue) || 0;
-    setInputValue(Math.floor(current / 2).toString());
+    const newValue = Math.floor(current / 2);
+    setInputValue(newValue.toString());
+    toast("Halved bet amount", {
+      icon: "➗",
+      duration: 1000,
+    });
   };
 
   const isInputValid =
     inputValue && parseInt(inputValue) > 0 && parseInt(inputValue) <= balance;
 
-  return (
+  const mainContent = gameActive ? (
+    <AppleFortuneGame
+      stake={parseInt(inputValue)}
+      onWin={handleGameWin}
+      onLose={handleGameLose}
+    />
+  ) : (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white relative mx-auto max-w-screen-lg">
       <div className="px-6 py-8 space-y-6">
         {/* Balance Card */}
-        <div className="bg-white rounded-3xl p-6 shadow-lg ">
+        <div className="bg-white rounded-3xl p-6 shadow-lg">
           <div className="flex items-center justify-between">
             <span className="text-[#8A2BE2] text-xl font-medium">
               Current Balance
@@ -119,5 +178,23 @@ export default function Component() {
         </div>
       </div>
     </div>
+  );
+
+  return (
+    <>
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          style: {
+            background: "#333",
+            color: "#fff",
+            fontSize: "16px",
+            padding: "12px 20px",
+            borderRadius: "12px",
+          },
+        }}
+      />
+      {mainContent}
+    </>
   );
 }
