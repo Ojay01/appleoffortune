@@ -81,7 +81,7 @@ export default function AppleFortuneGame({
         {
           icon: "🎯",
           duration: 3000,
-        }
+        },
       );
     } else {
       setCurrentRow(rowIndex - 1);
@@ -92,7 +92,7 @@ export default function AppleFortuneGame({
         {
           icon: "🍎",
           duration: 2000,
-        }
+        },
       );
     }
   };
