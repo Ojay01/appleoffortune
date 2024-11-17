@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "preinstall": "husky install",
-    "install-legacy": "npm install --legacy-peer-deps",
+    "install-legacy": "npm install --force",
     "build": "npm run install-legacy && next build",
     "start": "next start",
     "lint": "next lint",
