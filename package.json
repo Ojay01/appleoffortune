@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "preinstall": "husky install",
+    "preinstall": "npx husky install",
     "install-legacy": "npm install --force",
     "build": "npm run install-legacy && next build",
     "start": "next start",
