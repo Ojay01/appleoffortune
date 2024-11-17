@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "install-legacy": "npm install --force",
-    "build": "npm run install-legacy && next build",
+    "build": "npm ci && next build",
     "start": "next start",
     "lint": "next lint",
     "check-format": "prettier --check .",
