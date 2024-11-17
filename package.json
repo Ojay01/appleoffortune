@@ -4,12 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "preinstall": "npx husky install",
     "install-legacy": "npm install --force",
     "build": "npm run install-legacy && next build",
     "start": "next start",
     "lint": "next lint",
-    "prepare": "husky install",
     "check-format": "prettier --check .",
     "commit": "git-cz",
     "format": "prettier --write --check --ignore-path .gitignore .",
