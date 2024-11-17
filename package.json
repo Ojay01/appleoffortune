@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "preinstall": "husky install",
     "install-legacy": "npm install --legacy-peer-deps",
     "build": "npm run install-legacy && next build",
     "start": "next start",
