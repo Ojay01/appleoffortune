@@ -1,101 +1,123 @@
-import Image from "next/image";
+"use client";
+import { useState } from "react";
+import { Layers, Disc } from "lucide-react";
+import { Button } from "./components/ui/button";
+import { Input } from "./components/ui/input";
 
-export default function Home() {
+export default function Component() {
+  const [balance, setBalance] = useState(90);
+  const [inputValue, setInputValue] = useState("10");
+
+  const handleReset = () => {
+    setBalance(100);
+    setInputValue("");
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (/^\d*$/.test(value)) {
+      setInputValue(value);
+    }
+  };
+
+  const handleStart = () => {
+    const amount = parseInt(inputValue) || 0;
+    if (amount <= balance) {
+      setBalance((prev) => prev - amount);
+    }
+  };
+
+  const handleMin = () => setInputValue("1");
+  const handleMax = () => setInputValue(balance.toString());
+  const handleDouble = () => {
+    const current = parseInt(inputValue) || 0;
+    setInputValue(Math.min(current * 2, balance).toString());
+  };
+  const handleHalf = () => {
+    const current = parseInt(inputValue) || 0;
+    setInputValue(Math.floor(current / 2).toString());
+  };
+
+  const isInputValid =
+    inputValue && parseInt(inputValue) > 0 && parseInt(inputValue) <= balance;
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white relative mx-auto max-w-screen-lg">
+      <div className="px-6 py-8 space-y-6">
+        {/* Balance Card */}
+        <div className="bg-white rounded-3xl p-6 shadow-lg ">
+          <div className="flex items-center justify-between">
+            <span className="text-[#8A2BE2] text-xl font-medium">
+              Current Balance
+            </span>
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8">
+                <Disc className="w-full h-full text-yellow-500" />
+              </div>
+              <span className="text-[#8A2BE2] text-4xl font-bold">
+                {balance}
+              </span>
+            </div>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+
+        {/* Reset Button */}
+        <Button
+          className="w-full h-14 bg-[#8A2BE2] hover:bg-[#7B1FA2] text-white rounded-3xl font-medium text-xl shadow-lg"
+          onClick={handleReset}
         >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
+          RESET TO 100
+        </Button>
+      </div>
+
+      {/* Fixed Bottom Section */}
+      <div className="fixed bottom-0 left-0 right-0 px-6 pb-8 space-y-4 bg-gradient-to-t from-white to-transparent pt-8 mx-auto max-w-screen-lg">
+        {/* Operation Buttons */}
+        <div className="grid grid-cols-4 gap-4">
+          {[
+            { label: "Min", onClick: handleMin },
+            { label: "X2", onClick: handleDouble },
+            { label: "X/2", onClick: handleHalf },
+            { label: "Max", onClick: handleMax },
+          ].map((btn) => (
+            <Button
+              key={btn.label}
+              variant="secondary"
+              className="h-12 bg-[#8A2BE2] hover:bg-[#7B1FA2] text-white rounded-2xl font-medium text-lg shadow-md"
+              onClick={btn.onClick}
+            >
+              {btn.label}
+            </Button>
+          ))}
+        </div>
+
+        {/* Input Field */}
+        <div className="relative">
+          <Input
+            type="text"
+            value={inputValue}
+            onChange={handleInputChange}
+            className="w-full h-14 bg-black text-white rounded-3xl px-6 text-center text-2xl font-medium border-0 shadow-lg"
+            placeholder="Enter amount"
           />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        </div>
+
+        {/* Start Button */}
+        <div className="relative">
+          <Button
+            className="w-full h-14 bg-[#8A2BE2] hover:bg-[#7B1FA2] disabled:bg-gray-400 text-white rounded-3xl font-medium text-xl shadow-lg"
+            onClick={handleStart}
+            disabled={!isInputValid}
+          >
+            START
+          </Button>
+          <div className="absolute right-4 bottom-4">
+            <div className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center">
+              <Layers className="w-5 h-5" />
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
