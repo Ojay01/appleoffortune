@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Button } from "./components/ui/button";
+import { Button } from "../components/ui/button";
 import toast from "react-hot-toast";
 
 type GameState = "waiting" | "playing" | "won" | "lost";
@@ -81,7 +81,7 @@ export default function AppleFortuneGame({
         {
           icon: "🎯",
           duration: 3000,
-        },
+        }
       );
     } else {
       setCurrentRow(rowIndex - 1);
@@ -92,7 +92,7 @@ export default function AppleFortuneGame({
         {
           icon: "🍎",
           duration: 2000,
-        },
+        }
       );
     }
   };

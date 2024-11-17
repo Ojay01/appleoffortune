@@ -1,8 +1,8 @@
 "use client";
 import { useState } from "react";
 import { Layers, Disc } from "lucide-react";
-import { Button } from "./components/ui/button";
-import { Input } from "./components/ui/input";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
 import AppleFortuneGame from "./apple";
 import { Toaster } from "react-hot-toast";
 import toast from "react-hot-toast";
