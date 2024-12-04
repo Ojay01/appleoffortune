@@ -90,7 +90,7 @@ export default function AppleFortuneGame({
       toast.success(
         `Apple Found! Current multiplier: x${newMultiplier.toFixed(2)}`,
         {
-          icon: "🍎",
+          icon: "",
           duration: 2000,
         },
       );
