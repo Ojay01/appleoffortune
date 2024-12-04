@@ -2,13 +2,15 @@
 import { useState, useEffect } from "react";
 import { Button } from "../components/ui/button";
 import toast from "react-hot-toast";
+import { X } from "lucide-react";
 
-type GameState = "waiting" | "playing" | "won" | "lost";
-type CardContent = "apple" | "snake" | null;
+type GameState = "waiting" | "playing" | "won" | "lost" | "revealing";
+type FruitType = "watermelon" | "strawberry" | "pawpaw" | "guava";
+type CardContent = FruitType | "snake" | null;
 type RevealedCards = Record<string, CardContent>;
-type ApplePositions = Record<number, number>;
+type FruitPositions = Record<number, number>;
 
-interface AppleFortuneGameProps {
+interface FruitFortuneGameProps {
   stake: number;
   onWin: (amount: number) => void;
   onLose: () => void;
@@ -17,34 +19,85 @@ interface AppleFortuneGameProps {
 const INITIAL_ROWS = 10;
 const CARDS_PER_ROW = 5;
 
-export default function AppleFortuneGame({
+const FRUITS: FruitType[] = ["watermelon", "strawberry", "pawpaw", "guava"];
+
+const FRUIT_EMOJIS: Record<FruitType, string> = {
+  watermelon: "🍉",
+  strawberry: "🍓",
+  pawpaw: "🥑",
+  guava: "🍈",
+};
+
+const createToastWithClose = (message: string, icon?: string) => {
+  const toastId = toast(
+    <div className="flex items-center justify-between w-full">
+      <div className="flex items-center">
+        {icon && <span className="mr-2">{icon}</span>}
+        {message}
+      </div>
+      <button
+        onClick={() => toast.dismiss(toastId)}
+        className="ml-4 hover:bg-white/20 rounded-full p-1 transition-colors"
+      >
+        <X size={16} color="white" />
+      </button>
+    </div>,
+    {
+      duration: 2000,
+      style: {
+        background: "#2E8B57",
+        color: "#fff",
+        padding: "12px 20px",
+        borderRadius: "12px",
+      },
+    },
+  );
+};
+
+export default function FruitFortuneGame({
   stake,
   onWin,
   onLose,
-}: AppleFortuneGameProps) {
+}: FruitFortuneGameProps) {
   const [gameState, setGameState] = useState<GameState>("waiting");
   const [currentRow, setCurrentRow] = useState(INITIAL_ROWS - 1);
   const [revealedCards, setRevealedCards] = useState<RevealedCards>({});
-  const [applePositions, setApplePositions] = useState<ApplePositions>({});
+  const [fruitPositions, setFruitPositions] = useState<FruitPositions>({});
   const [currentMultiplier, setCurrentMultiplier] = useState(0);
   const [extraRows, setExtraRows] = useState(0);
 
   useEffect(() => {
-    const positions: ApplePositions = {};
+    const positions: FruitPositions = {};
     for (let i = 0; i < INITIAL_ROWS; i++) {
       positions[i] = Math.floor(Math.random() * CARDS_PER_ROW);
     }
-    setApplePositions(positions);
+    setFruitPositions(positions);
   }, []);
 
   const addNewRow = () => {
     setExtraRows((prev) => prev + 1);
     const newRowIndex = -extraRows - 1; // Negative indices for new rows above
-    setApplePositions((prev) => ({
+    setFruitPositions((prev) => ({
       ...prev,
       [newRowIndex]: Math.floor(Math.random() * CARDS_PER_ROW),
     }));
     setCurrentRow(newRowIndex);
+  };
+
+  const revealAllCards = () => {
+    const allRevealed: RevealedCards = {};
+    Object.keys(fruitPositions).forEach((rowIndex) => {
+      const row = Number(rowIndex);
+      for (let columnIndex = 0; columnIndex < CARDS_PER_ROW; columnIndex++) {
+        const key = `${row}-${columnIndex}`;
+        const fruitAtPosition =
+          fruitPositions[row] === columnIndex
+            ? FRUITS[Math.floor(Math.random() * FRUITS.length)]
+            : "snake";
+        allRevealed[key] = fruitAtPosition;
+      }
+    });
+    setRevealedCards(allRevealed);
   };
 
   const handleCardClick = (rowIndex: number, columnIndex: number): void => {
@@ -56,43 +109,48 @@ export default function AppleFortuneGame({
       return;
     }
 
-    const isApple = applePositions[rowIndex] === columnIndex;
+    const fruitAtPosition =
+      fruitPositions[rowIndex] === columnIndex
+        ? FRUITS[Math.floor(Math.random() * FRUITS.length)]
+        : "snake";
+
     setRevealedCards((prev) => ({
       ...prev,
-      [`${rowIndex}-${columnIndex}`]: isApple ? "apple" : "snake",
+      [`${rowIndex}-${columnIndex}`]: fruitAtPosition,
     }));
 
-    if (!isApple) {
-      setGameState("lost");
-      onLose();
-      toast.error("Game Over! You hit a snake! Better luck next time.", {
-        icon: "🐍",
-        duration: 3000,
-      });
+    if (fruitAtPosition === "snake") {
+      setGameState("revealing");
+      createToastWithClose(
+        "Game Over! You hit a snake! Revealing all cards...",
+        "🐍",
+      );
+
+      // Reveal all cards with a 3-second delay before ending the game
+      revealAllCards();
+
+      setTimeout(() => {
+        setGameState("lost");
+        onLose();
+      }, 3000);
     } else if (
-      rowIndex === Math.min(...Object.keys(applePositions).map(Number))
+      rowIndex === Math.min(...Object.keys(fruitPositions).map(Number))
     ) {
       // When at the top row, add a new row and continue
       addNewRow();
       const newMultiplier = calculateMultiplier(rowIndex) + 0.25;
       setCurrentMultiplier(newMultiplier);
-      toast.success(
+      createToastWithClose(
         `Perfect! New row added! Current multiplier: x${newMultiplier.toFixed(2)}`,
-        {
-          icon: "🎯",
-          duration: 3000,
-        },
+        "🎯",
       );
     } else {
       setCurrentRow(rowIndex - 1);
       const newMultiplier = calculateMultiplier(rowIndex - 1);
       setCurrentMultiplier(newMultiplier);
-      toast.success(
-        `Apple Found! Current multiplier: x${newMultiplier.toFixed(2)}`,
-        {
-          icon: "",
-          duration: 2000,
-        },
+      createToastWithClose(
+        ` Found! Current multiplier: x${newMultiplier.toFixed(2)}`,
+        FRUIT_EMOJIS[fruitAtPosition as FruitType],
       );
     }
   };
@@ -111,16 +169,15 @@ export default function AppleFortuneGame({
     setCurrentMultiplier(0);
     setExtraRows(0);
 
-    const positions: ApplePositions = {};
+    const positions: FruitPositions = {};
     for (let i = 0; i < INITIAL_ROWS; i++) {
       positions[i] = Math.floor(Math.random() * CARDS_PER_ROW);
     }
-    setApplePositions(positions);
-
-    toast("Game Started! Find the apples and avoid the snakes. Good luck!", {
-      icon: "🎮",
-      duration: 3000,
-    });
+    setFruitPositions(positions);
+    createToastWithClose(
+      "Game Started! Find the fruits and avoid the snakes. Good luck!",
+      "🎮",
+    );
   };
 
   const handleCashout = (): void => {
@@ -128,10 +185,10 @@ export default function AppleFortuneGame({
       setGameState("won");
       const winAmount = stake * currentMultiplier;
       onWin(winAmount);
-      toast.success(`Cashed Out! You won ${(winAmount - stake).toFixed(2)}!`, {
-        icon: "💰",
-        duration: 3000,
-      });
+      createToastWithClose(
+        `Cashed Out! You won ${(winAmount - stake).toFixed(2)}!`,
+        "💰",
+      );
     }
   };
 
@@ -144,39 +201,42 @@ export default function AppleFortuneGame({
     return indices;
   };
 
-  // Replace the return statement with this updated version
   return (
     <div className="w-full max-w-md mx-auto flex flex-col h-[calc(100vh-2rem)] gap-4 p-4">
       {/* Top Balance Display */}
-      <div className="bg-white rounded-xl p-4 shadow-lg flex justify-between items-center">
-        <span className="text-lg md:text-2xl font-bold">
+      <div className="bg-green-100 rounded-xl p-4 shadow-lg flex justify-between items-center">
+        <span className="text-lg md:text-2xl font-bold text-green-800">
           💰 {stake * (currentMultiplier || 1)}
         </span>
         {gameState === "playing" && (
           <Button
             onClick={handleCashout}
-            className="bg-green-500 hover:bg-green-600 text-white text-sm md:text-base"
+            className="bg-green-600 hover:bg-green-700 text-white text-sm md:text-base"
           >
             CASH OUT x{currentMultiplier}
           </Button>
         )}
       </div>
 
-      {/* Game Grid - Now uses flex-1 to take remaining space */}
+      {/* Game Grid */}
       <div className="flex-1 overflow-y-auto space-y-2 px-2">
         {getAllRowIndices().map((rowIndex) => (
           <div key={rowIndex} className="flex gap-2 items-center">
-            <div className="w-12 md:w-16 text-right font-bold text-purple-600 text-sm md:text-base">
+            <div className="w-12 md:w-16 text-right font-bold text-green-600 text-sm md:text-base">
               x{calculateMultiplier(rowIndex)}
             </div>
             <div className="flex-1 grid grid-cols-5 gap-1 md:gap-2">
               {Array.from({ length: CARDS_PER_ROW }).map((_, columnIndex) => {
-                const isRevealed = revealedCards[`${rowIndex}-${columnIndex}`];
-                const isApple = applePositions[rowIndex] === columnIndex;
+                const revealedContent =
+                  revealedCards[`${rowIndex}-${columnIndex}`];
+                const isRevealed = !!revealedContent;
+                const isPositionFruit =
+                  fruitPositions[rowIndex] === columnIndex;
+
                 const cardContent = isRevealed
-                  ? revealedCards[`${rowIndex}-${columnIndex}`] === "apple"
-                    ? "🍎"
-                    : "🐍"
+                  ? revealedContent === "snake"
+                    ? "🐍"
+                    : FRUIT_EMOJIS[revealedContent as FruitType]
                   : currentRow === rowIndex
                     ? "?"
                     : "";
@@ -188,28 +248,26 @@ export default function AppleFortuneGame({
                     disabled={
                       gameState !== "playing" ||
                       rowIndex !== currentRow ||
-                      isRevealed === "apple"
+                      isRevealed
                     }
                     className={`
                       aspect-square rounded-lg flex items-center justify-center text-base md:text-2xl relative
                       ${
                         isRevealed
-                          ? "bg-white shadow-inner"
-                          : isApple
-                            ? "bg-green-200/50 shadow-md"
-                            : "bg-red-200/50 shadow-md"
+                          ? "bg-green-100 shadow-inner"
+                          : "bg-green-200/50 shadow-md"
                       }
                       ${
                         currentRow === rowIndex && !isRevealed
-                          ? "cursor-pointer hover:bg-gray-100/50"
+                          ? "cursor-pointer hover:bg-green-100/50"
                           : "cursor-default"
                       }
                     `}
                   >
                     {cardContent}
-                    {!isRevealed && (
-                      <span className="absolute text-[8px] md:text-xs bottom-1 right-1 text-gray-600">
-                        {isApple ? "🍎" : "🐍"}
+                    {!isRevealed && isPositionFruit && (
+                      <span className="absolute text-[8px] md:text-xs bottom-1 right-1 text-green-600">
+                        🍎
                       </span>
                     )}
                   </button>
@@ -222,17 +280,17 @@ export default function AppleFortuneGame({
 
       {/* Game Controls */}
       <div className="space-y-2">
-        {gameState !== "playing" && (
+        {gameState !== "playing" && gameState !== "revealing" && (
           <Button
             onClick={handleStart}
-            className="w-full h-12 md:h-14 bg-purple-600 hover:bg-purple-700 text-white text-lg md:text-xl"
+            className="w-full h-12 md:h-14 bg-green-600 hover:bg-green-700 text-white text-lg md:text-xl"
           >
             {gameState === "waiting" ? "START GAME" : "PLAY AGAIN"}
           </Button>
         )}
 
         {gameState === "won" && (
-          <div className="text-center text-green-600 font-bold text-base md:text-xl">
+          <div className="text-center text-green-700 font-bold text-base md:text-xl">
             You won! +{(stake * currentMultiplier - stake).toFixed(2)}
           </div>
         )}

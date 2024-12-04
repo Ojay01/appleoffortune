@@ -1,25 +1,47 @@
 "use client";
 import { useState } from "react";
-import { Layers, Disc } from "lucide-react";
-import { Toaster } from "react-hot-toast";
-import toast from "react-hot-toast";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Layers, Disc, X } from "lucide-react";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
 import AppleFortuneGame from "./apple";
+import toast, { Toaster } from "react-hot-toast";
 
 export default function Component() {
   const [balance, setBalance] = useState(90);
   const [inputValue, setInputValue] = useState("10");
   const [gameActive, setGameActive] = useState(false);
 
+  const createToastWithClose = (message: string, icon?: string) => {
+    const toastId = toast(
+      <div className="flex items-center justify-between w-full">
+        <div className="flex items-center">
+          {icon && <span className="mr-2">{icon}</span>}
+          {message}
+        </div>
+        <button
+          onClick={() => toast.dismiss(toastId)}
+          className="ml-4 hover:bg-white/20 rounded-full p-1 transition-colors"
+        >
+          <X size={16} color="white" />
+        </button>
+      </div>,
+      {
+        duration: 2000,
+        style: {
+          background: "#2E8B57",
+          color: "#fff",
+          padding: "12px 20px",
+          borderRadius: "12px",
+        },
+      },
+    );
+  };
+
   const handleReset = () => {
     setBalance(100);
     setInputValue("");
     setGameActive(false);
-    toast.success("Balance reset to 100!", {
-      icon: "🔄",
-      duration: 2000,
-    });
+    createToastWithClose("Balance reset to 100!", "🔄");
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -34,15 +56,9 @@ export default function Component() {
     if (amount <= balance) {
       setBalance((prev) => prev - amount);
       setGameActive(true);
-      toast(`Starting game with ${amount} coins`, {
-        icon: "🎮",
-        duration: 2000,
-      });
+      createToastWithClose(`Starting game with ${amount} coins`, "🎮");
     } else {
-      toast.error("Insufficient balance!", {
-        icon: "⚠️",
-        duration: 2000,
-      });
+      createToastWithClose("Insufficient balance!", "⚠️");
     }
   };
 
@@ -57,38 +73,26 @@ export default function Component() {
 
   const handleMin = () => {
     setInputValue("1");
-    toast("Set to minimum bet", {
-      icon: "⬇️",
-      duration: 1000,
-    });
+    createToastWithClose("Set to minimum bet", "⬇️");
   };
 
   const handleMax = () => {
     setInputValue(balance.toString());
-    toast("Set to maximum bet", {
-      icon: "⬆️",
-      duration: 1000,
-    });
+    createToastWithClose("Set to maximum bet", "⬆️");
   };
 
   const handleDouble = () => {
     const current = parseInt(inputValue) || 0;
     const newValue = Math.min(current * 2, balance);
     setInputValue(newValue.toString());
-    toast("Doubled bet amount", {
-      icon: "✖️",
-      duration: 1000,
-    });
+    createToastWithClose("Doubled bet amount", "✖️");
   };
 
   const handleHalf = () => {
     const current = parseInt(inputValue) || 0;
     const newValue = Math.floor(current / 2);
     setInputValue(newValue.toString());
-    toast("Halved bet amount", {
-      icon: "➗",
-      duration: 1000,
-    });
+    createToastWithClose("Halved bet amount", "➗");
   };
 
   const isInputValid =
@@ -101,19 +105,19 @@ export default function Component() {
       onLose={handleGameLose}
     />
   ) : (
-    <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white relative mx-auto max-w-screen-lg">
+    <div className="min-h-screen bg-gradient-to-b from-green-50 to-white relative mx-auto max-w-screen-lg">
       <div className="px-6 py-8 space-y-6">
         {/* Balance Card */}
         <div className="bg-white rounded-3xl p-6 shadow-lg">
           <div className="flex items-center justify-between">
-            <span className="text-[#8A2BE2] text-xl font-medium">
+            <span className="text-[#2E8B57] text-xl font-medium">
               Current Balance
             </span>
             <div className="flex items-center gap-3">
               <div className="w-8 h-8">
-                <Disc className="w-full h-full text-yellow-500" />
+                <Disc className="w-full h-full text-amber-500" />
               </div>
-              <span className="text-[#8A2BE2] text-4xl font-bold">
+              <span className="text-[#2E8B57] text-4xl font-bold">
                 {balance}
               </span>
             </div>
@@ -122,7 +126,7 @@ export default function Component() {
 
         {/* Reset Button */}
         <Button
-          className="w-full h-14 bg-[#8A2BE2] hover:bg-[#7B1FA2] text-white rounded-3xl font-medium text-xl shadow-lg"
+          className="w-full h-14 bg-[#2E8B57] hover:bg-[#228B22] text-white rounded-3xl font-medium text-xl shadow-lg"
           onClick={handleReset}
         >
           RESET TO 100
@@ -142,7 +146,7 @@ export default function Component() {
             <Button
               key={btn.label}
               variant="secondary"
-              className="h-12 bg-[#8A2BE2] hover:bg-[#7B1FA2] text-white rounded-2xl font-medium text-lg shadow-md"
+              className="h-12 bg-[#2E8B57] hover:bg-[#228B22] text-white rounded-2xl font-medium text-lg shadow-md"
               onClick={btn.onClick}
             >
               {btn.label}
@@ -156,7 +160,7 @@ export default function Component() {
             type="text"
             value={inputValue}
             onChange={handleInputChange}
-            className="w-full h-14 bg-black text-white rounded-3xl px-6 text-center text-2xl font-medium border-0 shadow-lg"
+            className="w-full h-14 bg-green-900 text-white rounded-3xl px-6 text-center text-2xl font-medium border-0 shadow-lg"
             placeholder="Enter amount"
           />
         </div>
@@ -164,7 +168,7 @@ export default function Component() {
         {/* Start Button */}
         <div className="relative">
           <Button
-            className="w-full h-14 bg-[#8A2BE2] hover:bg-[#7B1FA2] disabled:bg-gray-400 text-white rounded-3xl font-medium text-xl shadow-lg"
+            className="w-full h-14 bg-[#2E8B57] hover:bg-[#228B22] disabled:bg-gray-400 text-white rounded-3xl font-medium text-xl shadow-lg"
             onClick={handleStart}
             disabled={!isInputValid}
           >
@@ -182,18 +186,7 @@ export default function Component() {
 
   return (
     <>
-      <Toaster
-        position="top-center"
-        toastOptions={{
-          style: {
-            background: "#333",
-            color: "#fff",
-            fontSize: "16px",
-            padding: "12px 20px",
-            borderRadius: "12px",
-          },
-        }}
-      />
+      <Toaster position="top-center" />
       {mainContent}
     </>
   );
