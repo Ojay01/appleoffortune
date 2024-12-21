@@ -252,8 +252,6 @@ export default function FruitFortuneGame({
                 const revealedContent =
                   revealedCards[`${rowIndex}-${columnIndex}`];
                 const isRevealed = !!revealedContent;
-                const isPositionFruit =
-                  fruitPositions[rowIndex] === columnIndex;
 
                 const cardContent = isRevealed
                   ? revealedContent === "snake"
