@@ -137,9 +137,10 @@ export default function FruitFortuneGame({
       rowIndex === Math.min(...Object.keys(fruitPositions).map(Number))
     ) {
       // When at the top row, add a new row and continue
-      addNewRow();
-      const newMultiplier = calculateMultiplier(rowIndex) + 0.25;
+     
+      const newMultiplier = calculateMultiplier(rowIndex);
       setCurrentMultiplier(newMultiplier);
+      addNewRow();
       createToastWithClose(
         `Perfect! New row added! Current multiplier: x${newMultiplier.toFixed(2)}`,
         "🎯",
@@ -156,10 +157,31 @@ export default function FruitFortuneGame({
   };
 
   const calculateMultiplier = (rowIndex: number): number => {
-    const baseMultiplier = 1.25;
-    const rowsAboveBase = INITIAL_ROWS - rowIndex - 1; // Calculate levels above the current row
-    const extraLevels = rowIndex < 0 ? Math.abs(rowIndex) : rowsAboveBase;
-    return Number((baseMultiplier + extraLevels * 0.25).toFixed(2));
+    // For original rows (positive indices), keep the existing logic
+    if (rowIndex >= 0) {
+      const baseMultiplier = 1.25;
+      const rowsAboveBase = INITIAL_ROWS - rowIndex - 1;
+      return Number((baseMultiplier + rowsAboveBase * 0.25).toFixed(2));
+    }
+  
+    // For new rows (negative indices)
+    const newRowNumber = Math.abs(rowIndex);
+    
+    // First 10 new rows
+    if (newRowNumber <= 10) {
+      return Number((4.0 + (newRowNumber - 1) * 0.5).toFixed(2));
+    }
+    
+    // After 10 rows
+    const completedSets = Math.floor((newRowNumber - 11) / 10);
+    const remainingRows = (newRowNumber - 11) % 10;
+    
+    // Base value after first 10 rows is 9.0
+    // Add 20 for each completed set of 10 rows
+    // Add 2 for each remaining row
+    const multiplier = 9.0 + (completedSets * 20) + (remainingRows * 2) + 2;
+    
+    return Number(multiplier.toFixed(2));
   };
 
   const handleStart = (): void => {
@@ -265,11 +287,6 @@ export default function FruitFortuneGame({
                     `}
                   >
                     {cardContent}
-                    {!isRevealed && isPositionFruit && (
-                      <span className="absolute text-[8px] md:text-xs bottom-1 right-1 text-green-600">
-                        🍎
-                      </span>
-                    )}
                   </button>
                 );
               })}
