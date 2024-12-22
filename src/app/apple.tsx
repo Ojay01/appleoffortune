@@ -171,17 +171,24 @@ export default function FruitFortuneGame({
     if (newRowNumber <= 10) {
       return Number((4.0 + (newRowNumber - 1) * 0.5).toFixed(2));
     }
+  
+    // For rows between 11 and 30
+    if (newRowNumber <= 30) {
+      const completedSets = Math.floor((newRowNumber - 11) / 10);
+      const remainingRows = (newRowNumber - 11) % 10;
+      
+      // Base value after first 10 rows is 9.0
+      // Add 20 for each completed set of 10 rows
+      // Add 2 for each remaining row
+      const multiplier = 9.0 + (completedSets * 20) + (remainingRows * 2) + 2;
+      
+      return Number(multiplier.toFixed(2));
+    }
     
-    // After 10 rows
-    const completedSets = Math.floor((newRowNumber - 11) / 10);
-    const remainingRows = (newRowNumber - 11) % 10;
-    
-    // Base value after first 10 rows is 9.0
-    // Add 20 for each completed set of 10 rows
-    // Add 2 for each remaining row
-    const multiplier = 9.0 + (completedSets * 20) + (remainingRows * 2) + 2;
-    
-    return Number(multiplier.toFixed(2));
+    // For rows greater than 30
+    const rowsAfter30 = newRowNumber - 30;
+    const baseMultiplierAt30 = 49.0; // This is the multiplier at row 30
+    return Number((baseMultiplierAt30 + rowsAfter30 * 5).toFixed(2));
   };
 
   const handleStart = (): void => {
@@ -252,6 +259,8 @@ export default function FruitFortuneGame({
                 const revealedContent =
                   revealedCards[`${rowIndex}-${columnIndex}`];
                 const isRevealed = !!revealedContent;
+                const isPositionFruit =
+                  fruitPositions[rowIndex] === columnIndex;
 
                 const cardContent = isRevealed
                   ? revealedContent === "snake"
@@ -285,6 +294,11 @@ export default function FruitFortuneGame({
                     `}
                   >
                     {cardContent}
+                    {!isRevealed && isPositionFruit && (
+                      <span className="absolute text-[8px] md:text-xs bottom-1 right-1 text-green-600">
+                        🍎
+                      </span>
+                    )}
                   </button>
                 );
               })}
