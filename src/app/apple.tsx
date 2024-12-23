@@ -50,7 +50,7 @@ const createToastWithClose = (message: string, icon?: string) => {
         padding: "12px 20px",
         borderRadius: "12px",
       },
-    },
+    }
   );
 };
 
@@ -123,7 +123,7 @@ export default function FruitFortuneGame({
       setGameState("revealing");
       createToastWithClose(
         "Game Over! You hit a snake! Revealing all cards...",
-        "🐍",
+        "🐍"
       );
 
       // Reveal all cards with a 3-second delay before ending the game
@@ -137,13 +137,15 @@ export default function FruitFortuneGame({
       rowIndex === Math.min(...Object.keys(fruitPositions).map(Number))
     ) {
       // When at the top row, add a new row and continue
-     
+
       const newMultiplier = calculateMultiplier(rowIndex);
       setCurrentMultiplier(newMultiplier);
       addNewRow();
       createToastWithClose(
-        `Perfect! New row added! Current multiplier: x${newMultiplier.toFixed(2)}`,
-        "🎯",
+        `Perfect! New row added! Current multiplier: x${newMultiplier.toFixed(
+          2
+        )}`,
+        "🎯"
       );
     } else {
       setCurrentRow(rowIndex - 1);
@@ -151,44 +153,41 @@ export default function FruitFortuneGame({
       setCurrentMultiplier(newMultiplier);
       createToastWithClose(
         ` Found! Current multiplier: x${newMultiplier.toFixed(2)}`,
-        FRUIT_EMOJIS[fruitAtPosition as FruitType],
+        FRUIT_EMOJIS[fruitAtPosition as FruitType]
       );
     }
   };
 
   const calculateMultiplier = (rowIndex: number): number => {
     // For original rows (positive indices), keep the existing logic
-    if (rowIndex >= 0) {
+    if (rowIndex >= 8) {
       const baseMultiplier = 1.25;
       const rowsAboveBase = INITIAL_ROWS - rowIndex - 1;
       return Number((baseMultiplier + rowsAboveBase * 0.25).toFixed(2));
     }
-  
-    // For new rows (negative indices)
-    const newRowNumber = Math.abs(rowIndex);
-    
-    // First 10 new rows
-    if (newRowNumber <= 10) {
-      return Number((4.0 + (newRowNumber - 1) * 0.5).toFixed(2));
+    if (rowIndex >= 6) {
+      const baseMultiplier = 1.0;
+      const rowsAboveBase = INITIAL_ROWS - rowIndex - 1;
+      return Number((baseMultiplier + rowsAboveBase * 0.5).toFixed(2));
     }
-  
-    // For rows between 11 and 30
-    if (newRowNumber <= 30) {
-      const completedSets = Math.floor((newRowNumber - 11) / 10);
-      const remainingRows = (newRowNumber - 11) % 10;
-      
-      // Base value after first 10 rows is 9.0
-      // Add 20 for each completed set of 10 rows
-      // Add 2 for each remaining row
-      const multiplier = 9.0 + (completedSets * 20) + (remainingRows * 2) + 2;
-      
-      return Number(multiplier.toFixed(2));
+    if (rowIndex >= 3 && rowIndex <= 5) {
+      const baseMultiplier = 0.5;
+      const rowsAboveBase = INITIAL_ROWS - rowIndex - 2;
+      return Number((baseMultiplier + rowsAboveBase * 1).toFixed(2));
     }
-    
-    // For rows greater than 30
-    const rowsAfter30 = newRowNumber - 30;
-    const baseMultiplierAt30 = 49.0; // This is the multiplier at row 30
-    return Number((baseMultiplierAt30 + rowsAfter30 * 5).toFixed(2));
+    if (rowIndex >= 0 && rowIndex <= 3) {
+      const baseMultiplier = 1.5;
+      const rowsAboveBase = INITIAL_ROWS - rowIndex - 5;
+      return Number((baseMultiplier + rowsAboveBase * 2).toFixed(2));
+    }
+    if (rowIndex < 0) {
+      const absoluteIndex = Math.abs(rowIndex);
+      const baseValue = 13;
+      const value = baseValue + (absoluteIndex * (absoluteIndex + 1)) / 2;
+      return Number(value.toFixed(2));
+    }
+
+    return 0;
   };
 
   const handleStart = (): void => {
@@ -205,7 +204,7 @@ export default function FruitFortuneGame({
     setFruitPositions(positions);
     createToastWithClose(
       "Game Started! Find the fruits and avoid the snakes. Good luck!",
-      "🎮",
+      "🎮"
     );
   };
 
@@ -216,7 +215,7 @@ export default function FruitFortuneGame({
       onWin(winAmount);
       createToastWithClose(
         `Cashed Out! You won ${(winAmount - stake).toFixed(2)}!`,
-        "💰",
+        "💰"
       );
     }
   };
@@ -267,8 +266,8 @@ export default function FruitFortuneGame({
                     ? "🐍"
                     : FRUIT_EMOJIS[revealedContent as FruitType]
                   : currentRow === rowIndex
-                    ? "?"
-                    : "";
+                  ? "?"
+                  : "";
 
                 return (
                   <button
