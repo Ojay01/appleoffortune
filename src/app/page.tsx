@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Layers, Disc, X } from "lucide-react";
+import { Layers, Disc, X, Loader2 } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import AppleFortuneGame from "./apple";
@@ -8,10 +8,12 @@ import toast, { Toaster } from "react-hot-toast";
 import { createApiClient } from "@/components/lib/api";
 
 export default function Component() {
-  const [balance, setBalance] = useState(100);
+  const [balance, setBalance] = useState<number | null>(null);
   const [inputValue, setInputValue] = useState("10");
   const [gameActive, setGameActive] = useState(false);
   const [authToken, setAuthToken] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get("authToken");
@@ -19,20 +21,28 @@ export default function Component() {
   }, []);
 
   useEffect(() => {
-    if (authToken) {
-      const api = createApiClient(authToken);
-      const fetchBalance = async () => {
-        try {
+    const fetchBalance = async () => {
+      setIsLoading(true);
+      try {
+        if (authToken) {
+          const api = createApiClient(authToken);
           const response = await api.get("/fruit-game/balance");
           setBalance(response.data.balance);
-        } catch (error) {
-          console.error("Error fetching balance:", error);
+        } else {
+          // For unauthenticated users, use default balance
+          setBalance(100);
         }
-      };
+      } catch (error) {
+        console.error("Error fetching balance:", error);
+        // Fallback to default balance on error
+        setBalance(100);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-      fetchBalance();
-    }
-  }, [authToken]); // Add authToken as a dependency
+    fetchBalance();
+  }, [authToken]);
 
   const createToastWithClose = (message: string, icon?: string) => {
     const toastId = toast(
@@ -62,10 +72,11 @@ export default function Component() {
   };
 
   const handleReset = () => {
-    setBalance(balance);
-    setInputValue("");
-    setGameActive(false);
-    createToastWithClose(`Balance reset to ${balance}!`, "🔄");
+    if (balance !== null) {
+      setInputValue("");
+      setGameActive(false);
+      createToastWithClose(`Balance reset to ${balance}!`, "🔄");
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -77,8 +88,8 @@ export default function Component() {
 
   const handleStartUnauthenticated = () => {
     const amount = parseInt(inputValue) || 0;
-    if (amount <= balance) {
-      setBalance((prev) => prev - amount);
+    if (balance !== null && amount <= balance) {
+      setBalance(balance - amount);
       setGameActive(true);
       createToastWithClose(`Starting game with ${amount} coins`, "🎮");
     } else {
@@ -87,7 +98,9 @@ export default function Component() {
   };
 
   const handleGameWinUnauth = (winAmount: number) => {
-    setBalance((prev) => prev + winAmount);
+    if (balance !== null) {
+      setBalance(balance + winAmount);
+    }
     setGameActive(false);
   };
 
@@ -96,29 +109,36 @@ export default function Component() {
   };
 
   const handleStart = async () => {
+    if (balance === null) return;
+    
     const amount = parseInt(inputValue) || 0;
-    const api = createApiClient(authToken);
     if (amount <= balance) {
-      try {
-        const response = await api.post("/fruit-game/start", { stake: amount });
+      if (authToken) {
+        try {
+          const api = createApiClient(authToken);
+          const response = await api.post("/fruit-game/start", { stake: amount });
 
-        if (response.status === 200) {
-          // Update the balance with the response from the API
-          setBalance(response.data.balance);
-          setGameActive(true);
-          createToastWithClose(`Starting game with ${amount} coins`, "🎮");
+          if (response.status === 200) {
+            // Update the balance with the response from the API
+            setBalance(response.data.balance);
+            setGameActive(true);
+            createToastWithClose(`Starting game with ${amount} coins`, "🎮");
+          }
+        } catch (error: any) {
+          if (error?.response?.status === 401) {
+            // Handle unauthenticated users
+            handleStartUnauthenticated();
+          } else {
+            // Handle other error responses from the API
+            const errorMessage =
+              error?.response?.data?.message ||
+              "An error occurred. Please try again.";
+            createToastWithClose(errorMessage, "⚠️");
+          }
         }
-      } catch (error: any) {
-        if (error?.response?.status === 401) {
-          // Handle unauthenticated users
-          handleStartUnauthenticated();
-        } else {
-          // Handle other error responses from the API
-          const errorMessage =
-            error?.response?.data?.message ||
-            "An error occurred. Please try again.";
-          createToastWithClose(errorMessage, "⚠️");
-        }
+      } else {
+        // Handle unauthenticated users
+        handleStartUnauthenticated();
       }
     } else {
       createToastWithClose("Insufficient balance!", "⚠️");
@@ -126,59 +146,65 @@ export default function Component() {
   };
 
   const handleGameWin = async (winAmount: number) => {
-    const api = createApiClient(authToken);
+    if (authToken) {
+      try {
+        const api = createApiClient(authToken);
+        // Make API call to cash out and update balance
+        const response = await api.post("/fruit-game/cashout", {
+          amount: winAmount,
+          score: winAmount,
+          data: null,
+        });
 
-    try {
-      // Make API call to cash out and update balance
-      const response = await api.post("/fruit-game/cashout", {
-        amount: winAmount,
-        score: winAmount,
-        data: null,
-      });
-
-      if (response.status === 200) {
-        // Update the frontend balance
-        setBalance(response.data.balance);
-        setGameActive(false);
-        createToastWithClose(`You won ${winAmount} coins!`, "🎉");
+        if (response.status === 200) {
+          // Update the frontend balance
+          setBalance(response.data.balance);
+          setGameActive(false);
+          createToastWithClose(`You won ${winAmount} coins!`, "🎉");
+        }
+      } catch (error: any) {
+        if (error?.response?.status === 401) {
+          // Handle unauthenticated users
+          handleGameWinUnauth(winAmount);
+        } else {
+          // Handle error (e.g., server or network issues)
+          createToastWithClose(
+            "An error occurred during cashout. Please try again.",
+            "⚠️"
+          );
+        }
       }
-    } catch (error: any) {
-      if (error?.response?.status === 401) {
-        // Handle unauthenticated users
-        handleGameWinUnauth(winAmount);
-      } else {
-        // Handle error (e.g., server or network issues)
-        createToastWithClose(
-          "An error occurred during cashout. Please try again.",
-          "⚠️"
-        );
-      }
+    } else {
+      handleGameWinUnauth(winAmount);
     }
   };
 
   const handleGameLose = async () => {
-    const api = createApiClient(authToken);
+    if (authToken) {
+      try {
+        const api = createApiClient(authToken);
+        // Call the backend to mark the game as lost
+        await api.post("/fruit-game/lose", {
+          score: null,
+          data: null,
+        });
 
-    try {
-      // Call the backend to mark the game as lost
-      await api.post("/fruit-game/lose", {
-        score: null,
-        data: null,
-      });
-
-      setGameActive(false);
-      createToastWithClose("You lost the game.", "⚠️");
-    } catch (error: any) {
-      if (error?.response?.status === 401) {
-        // Handle unauthenticated users
-        handleGameLoseUnauth();
-      } else {
-        // Handle error (e.g., server or network issues)
-        createToastWithClose(
-          "An error occurred while losing the game. Please try again.",
-          "⚠️"
-        );
+        setGameActive(false);
+        createToastWithClose("You lost the game.", "⚠️");
+      } catch (error: any) {
+        if (error?.response?.status === 401) {
+          // Handle unauthenticated users
+          handleGameLoseUnauth();
+        } else {
+          // Handle error (e.g., server or network issues)
+          createToastWithClose(
+            "An error occurred while losing the game. Please try again.",
+            "⚠️"
+          );
+        }
       }
+    } else {
+      handleGameLoseUnauth();
     }
   };
 
@@ -188,15 +214,19 @@ export default function Component() {
   };
 
   const handleMax = () => {
-    setInputValue(balance.toString());
-    createToastWithClose("Set to maximum bet", "⬆️");
+    if (balance !== null) {
+      setInputValue(balance.toString());
+      createToastWithClose("Set to maximum bet", "⬆️");
+    }
   };
 
   const handleDouble = () => {
-    const current = parseInt(inputValue) || 0;
-    const newValue = Math.min(current * 2, balance);
-    setInputValue(newValue.toString());
-    createToastWithClose("Doubled bet amount", "✖️");
+    if (balance !== null) {
+      const current = parseInt(inputValue) || 0;
+      const newValue = Math.min(current * 2, balance);
+      setInputValue(newValue.toString());
+      createToastWithClose("Doubled bet amount", "✖️");
+    }
   };
 
   const handleHalf = () => {
@@ -207,7 +237,19 @@ export default function Component() {
   };
 
   const isInputValid =
-    inputValue && parseInt(inputValue) > 0 && parseInt(inputValue) <= balance;
+    balance !== null && inputValue && parseInt(inputValue) > 0 && parseInt(inputValue) <= balance;
+
+  // Loading Screen
+  if (isLoading) {
+    return (
+      <div className="fixed inset-0 bg-green-50 bg-opacity-90 backdrop-blur-sm flex items-center justify-center z-50">
+        <div className="text-center space-y-4">
+          <Loader2 className="w-12 h-12 text-green-600 animate-spin mx-auto" />
+          <p className="text-xl font-medium text-green-800">Authenticating...</p>
+        </div>
+      </div>
+    );
+  }
 
   const mainContent = gameActive ? (
     <AppleFortuneGame
