@@ -1,15 +1,29 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Layers, Disc, X } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import AppleFortuneGame from "./apple";
 import toast, { Toaster } from "react-hot-toast";
+import api from "@/components/lib/api";
 
 export default function Component() {
-  const [balance, setBalance] = useState(90);
+  const [balance, setBalance] = useState(100);
   const [inputValue, setInputValue] = useState("10");
   const [gameActive, setGameActive] = useState(false);
+
+  useEffect(() => {
+    const fetchBalance = async () => {
+      try {
+        const response = await api.get("/fruit-game/balance");
+        setBalance(response.data.balance);
+      } catch (error) {
+        console.error("Error fetching balance:", error);
+      }
+    };
+
+    fetchBalance();
+  }, []);
 
   const createToastWithClose = (message: string, icon?: string) => {
     const toastId = toast(
@@ -33,15 +47,15 @@ export default function Component() {
           padding: "12px 20px",
           borderRadius: "12px",
         },
-      },
+      }
     );
   };
 
   const handleReset = () => {
-    setBalance(100);
+    setBalance(balance);
     setInputValue("");
     setGameActive(false);
-    createToastWithClose("Balance reset to 100!", "🔄");
+    createToastWithClose(`Balance reset to ${balance}!`, "🔄");
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -51,7 +65,7 @@ export default function Component() {
     }
   };
 
-  const handleStart = () => {
+  const handleStartUnauthenticated = () => {
     const amount = parseInt(inputValue) || 0;
     if (amount <= balance) {
       setBalance((prev) => prev - amount);
@@ -62,13 +76,97 @@ export default function Component() {
     }
   };
 
-  const handleGameWin = (winAmount: number) => {
+  const handleGameWinUnauth = (winAmount: number) => {
     setBalance((prev) => prev + winAmount);
     setGameActive(false);
   };
 
-  const handleGameLose = () => {
+  const handleGameLoseUnauth = () => {
     setGameActive(false);
+  };
+
+  const handleStart = async () => {
+    const amount = parseInt(inputValue) || 0;
+
+    if (amount <= balance) {
+      try {
+        // Make the API call to start the game and deduct the balance
+        const response = await api.post("/fruit-game/start", { stake: amount });
+
+        if (response.status === 200) {
+          // Update the balance with the response from the API
+          setBalance(response.data.balance);
+          setGameActive(true);
+          createToastWithClose(`Starting game with ${amount} coins`, "🎮");
+        }
+      } catch (error) {
+        if ((error as any)?.response?.status === 401) {
+          // Handle unauthenticated users
+          handleStartUnauthenticated();
+        } else {
+          // Handle other error responses from the API
+          const errorMessage =
+            (error as any)?.response?.data?.message ||
+            "An error occurred. Please try again.";
+          createToastWithClose(errorMessage, "⚠️");
+        }
+      }
+    } else {
+      createToastWithClose("Insufficient balance!", "⚠️");
+    }
+  };
+
+  const handleGameWin = async (winAmount: number) => {
+    try {
+      // Make API call to cash out and update balance
+      const response = await api.post("/fruit-game/cashout", {
+        amount: winAmount,
+        score: winAmount,
+        data: null,
+      });
+
+      if (response.status === 200) {
+        // Update the frontend balance
+        setBalance(response.data.balance);
+        setGameActive(false);
+        createToastWithClose(`You won ${winAmount} coins!`, "🎉");
+      }
+    } catch (error) {
+      if ((error as any)?.response?.status === 401) {
+        // Handle unauthenticated users
+        handleGameWinUnauth(winAmount);
+      } else {
+        // Handle error (e.g., server or network issues)
+        createToastWithClose(
+          "An error occurred during cashout. Please try again.",
+          "⚠️"
+        );
+      }
+    }
+  };
+
+  const handleGameLose = async () => {
+    try {
+      // Call the backend to mark the game as lost
+      await api.post("/fruit-game/lose", {
+        score: null,
+        data: null,
+      });
+
+      setGameActive(false);
+      createToastWithClose("You lost the game.", "⚠️");
+    } catch (error) {
+      if ((error as any)?.response?.status === 401) {
+        // Handle unauthenticated users
+        handleGameLoseUnauth();
+      } else {
+        // Handle error (e.g., server or network issues)
+        createToastWithClose(
+          "An error occurred while losing the game. Please try again.",
+          "⚠️"
+        );
+      }
+    }
   };
 
   const handleMin = () => {
@@ -129,7 +227,7 @@ export default function Component() {
           className="w-full h-14 bg-[#2E8B57] hover:bg-[#228B22] text-white rounded-3xl font-medium text-xl shadow-lg"
           onClick={handleReset}
         >
-          RESET TO 100
+          RESET TO &#8355; {balance}
         </Button>
       </div>
 
