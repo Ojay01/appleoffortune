@@ -5,25 +5,34 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import AppleFortuneGame from "./apple";
 import toast, { Toaster } from "react-hot-toast";
-import api from "@/components/lib/api";
+import { createApiClient } from "@/components/lib/api";
 
 export default function Component() {
   const [balance, setBalance] = useState(100);
   const [inputValue, setInputValue] = useState("10");
   const [gameActive, setGameActive] = useState(false);
+  const [authToken, setAuthToken] = useState<string | null>(null);
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get("authToken");
+    setAuthToken(token);
+  }, []);
 
   useEffect(() => {
-    const fetchBalance = async () => {
-      try {
-        const response = await api.get("/fruit-game/balance");
-        setBalance(response.data.balance);
-      } catch (error) {
-        console.error("Error fetching balance:", error);
-      }
-    };
+    if (authToken) {
+      const api = createApiClient(authToken);
+      const fetchBalance = async () => {
+        try {
+          const response = await api.get("/fruit-game/balance");
+          setBalance(response.data.balance);
+        } catch (error) {
+          console.error("Error fetching balance:", error);
+        }
+      };
 
-    fetchBalance();
-  }, []);
+      fetchBalance();
+    }
+  }, [authToken]); // Add authToken as a dependency
 
   const createToastWithClose = (message: string, icon?: string) => {
     const toastId = toast(
@@ -35,6 +44,7 @@ export default function Component() {
         <button
           onClick={() => toast.dismiss(toastId)}
           className="ml-4 hover:bg-white/20 rounded-full p-1 transition-colors"
+          title="Close notification"
         >
           <X size={16} color="white" />
         </button>
@@ -87,10 +97,9 @@ export default function Component() {
 
   const handleStart = async () => {
     const amount = parseInt(inputValue) || 0;
-
+    const api = createApiClient(authToken);
     if (amount <= balance) {
       try {
-        // Make the API call to start the game and deduct the balance
         const response = await api.post("/fruit-game/start", { stake: amount });
 
         if (response.status === 200) {
@@ -117,6 +126,8 @@ export default function Component() {
   };
 
   const handleGameWin = async (winAmount: number) => {
+    const api = createApiClient(authToken);
+
     try {
       // Make API call to cash out and update balance
       const response = await api.post("/fruit-game/cashout", {
@@ -146,6 +157,8 @@ export default function Component() {
   };
 
   const handleGameLose = async () => {
+    const api = createApiClient(authToken);
+
     try {
       // Call the backend to mark the game as lost
       await api.post("/fruit-game/lose", {
@@ -155,7 +168,7 @@ export default function Component() {
 
       setGameActive(false);
       createToastWithClose("You lost the game.", "⚠️");
-    } catch (error:  any) {
+    } catch (error: any) {
       if (error?.response?.status === 401) {
         // Handle unauthenticated users
         handleGameLoseUnauth();
