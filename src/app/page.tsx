@@ -99,14 +99,14 @@ export default function Component() {
           setGameActive(true);
           createToastWithClose(`Starting game with ${amount} coins`, "🎮");
         }
-      } catch (error) {
-        if ((error as any)?.response?.status === 401) {
+      } catch (error: any) {
+        if (error?.response?.status === 401) {
           // Handle unauthenticated users
           handleStartUnauthenticated();
         } else {
           // Handle other error responses from the API
           const errorMessage =
-            (error as any)?.response?.data?.message ||
+            error?.response?.data?.message ||
             "An error occurred. Please try again.";
           createToastWithClose(errorMessage, "⚠️");
         }
@@ -131,8 +131,8 @@ export default function Component() {
         setGameActive(false);
         createToastWithClose(`You won ${winAmount} coins!`, "🎉");
       }
-    } catch (error) {
-      if ((error as any)?.response?.status === 401) {
+    } catch (error: any) {
+      if (error?.response?.status === 401) {
         // Handle unauthenticated users
         handleGameWinUnauth(winAmount);
       } else {
@@ -155,8 +155,8 @@ export default function Component() {
 
       setGameActive(false);
       createToastWithClose("You lost the game.", "⚠️");
-    } catch (error) {
-      if ((error as any)?.response?.status === 401) {
+    } catch (error: any) {
+      if (error?.response?.status === 401) {
         // Handle unauthenticated users
         handleGameLoseUnauth();
       } else {
