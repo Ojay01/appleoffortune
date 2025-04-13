@@ -45,7 +45,9 @@ export default function Component() {
           onClick={() => toast.dismiss(toastId)}
           className="ml-4 hover:bg-white/20 rounded-full p-1 transition-colors"
           title="Close notification"
-        ></button>{" "}
+        >
+          <X size={16} color="white" />
+        </button>
       </div>,
       {
         duration: 2000,
