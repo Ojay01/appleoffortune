@@ -99,7 +99,7 @@ export default function Component() {
           setGameActive(true);
           createToastWithClose(`Starting game with ${amount} coins`, "🎮");
         }
-      } catch (error: string | any) {
+      } catch (error: any) {
         if (error?.response?.status === 401) {
           // Handle unauthenticated users
           handleStartUnauthenticated();
@@ -131,7 +131,7 @@ export default function Component() {
         setGameActive(false);
         createToastWithClose(`You won ${winAmount} coins!`, "🎉");
       }
-    } catch (error: string | any) {
+    } catch (error: any) {
       if (error?.response?.status === 401) {
         // Handle unauthenticated users
         handleGameWinUnauth(winAmount);
@@ -155,7 +155,7 @@ export default function Component() {
 
       setGameActive(false);
       createToastWithClose("You lost the game.", "⚠️");
-    } catch (error: string | any) {
+    } catch (error:  any) {
       if (error?.response?.status === 401) {
         // Handle unauthenticated users
         handleGameLoseUnauth();
