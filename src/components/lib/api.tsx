@@ -1,7 +1,5 @@
 import axios from "axios";
-
-const urlParams = new URLSearchParams(window.location.search);
-const authToken = urlParams.get("authToken");
+import { useSearchParams } from "next/navigation";
 
 const api = axios.create({
   baseURL: "https://betpool.online/api",
@@ -9,8 +7,18 @@ const api = axios.create({
   headers: {
     "Content-Type": "application/json",
     Accept: "application/json",
-    Authorization: `Bearer ${authToken}`,
   },
 });
 
+export function useAuthenticatedApi() {
+  const searchParams = useSearchParams();
+  const authToken = searchParams?.get("authToken") || null;
+
+  // Add auth header if token exists
+  if (authToken) {
+    api.defaults.headers.common["Authorization"] = `Bearer ${authToken}`;
+  }
+
+  return api;
+}
 export default api;
