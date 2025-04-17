@@ -1,14 +1,25 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Layers, Disc, X, Loader2 } from "lucide-react";
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
+import { Toaster } from "react-hot-toast";
+import { createApiClient } from "@/lib/api";
+import { LoadingSpinner } from "../components/atoms/LoadingSpinner";
+import { MainContent } from "../components/organisms/MainContent";
 import AppleFortuneGame from "./apple";
-import toast, { Toaster } from "react-hot-toast";
-import { createApiClient } from "@/components/lib/api";
+import { createToastWithClose } from "../components/molecules/ToastNotification";
 
-export default function Component() {
-  const [balance, setBalance] = useState<number | null>(null);
+interface WalletBalances {
+  balance: number;
+  bonus: number;
+  with_balance: number;
+}
+
+export default function FortuneGamePage() {
+  const [walletBalances, setWalletBalances] = useState<WalletBalances>({
+    balance: 100,
+    bonus: 0,
+    with_balance: 0,
+  });
+  const [selectedWallet, setSelectedWallet] = useState<string>("balance");
   const [inputValue, setInputValue] = useState("10");
   const [gameActive, setGameActive] = useState(false);
   const [authToken, setAuthToken] = useState<string | null>(null);
@@ -21,62 +32,45 @@ export default function Component() {
   }, []);
 
   useEffect(() => {
-    const fetchBalance = async () => {
+    const fetchBalances = async () => {
       setIsLoading(true);
       try {
         if (authToken) {
           const api = createApiClient(authToken);
           const response = await api.get("/fruit-game/balance");
-          setBalance(response.data.balance);
+          setWalletBalances({
+            balance: response.data.balance,
+            bonus: response.data.bonus,
+            with_balance: response.data.with_balance,
+          });
         } else {
-          // For unauthenticated users, use default balance
-          setBalance(100);
+          // For unauthenticated users, use default balances
+          setWalletBalances({
+            balance: 100,
+            bonus: 0,
+            with_balance: 0,
+          });
         }
       } catch (error) {
-        console.error("Error fetching balance:", error);
-        // Fallback to default balance on error
-        setBalance(100);
+        console.error("Error fetching balances:", error);
+        // Fallback to default balances on error
+        setWalletBalances({
+          balance: 100,
+          bonus: 0,
+          with_balance: 0,
+        });
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchBalance();
+    fetchBalances();
   }, [authToken]);
 
-  const createToastWithClose = (message: string, icon?: string) => {
-    const toastId = toast(
-      <div className="flex items-center justify-between w-full">
-        <div className="flex items-center">
-          {icon && <span className="mr-2">{icon}</span>}
-          {message}
-        </div>
-        <button
-          onClick={() => toast.dismiss(toastId)}
-          className="ml-4 hover:bg-white/20 rounded-full p-1 transition-colors"
-          title="Close notification"
-        >
-          <X size={16} color="white" />
-        </button>
-      </div>,
-      {
-        duration: 2000,
-        style: {
-          background: "#2E8B57",
-          color: "#fff",
-          padding: "12px 20px",
-          borderRadius: "12px",
-        },
-      }
-    );
-  };
-
   const handleReset = () => {
-    if (balance !== null) {
-      setInputValue("");
-      setGameActive(false);
-      createToastWithClose(`Balance reset to ${balance}!`, "🔄");
-    }
+    setInputValue("");
+    setGameActive(false);
+    createToastWithClose(`Wallet balances reset!`, "🔄");
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -86,21 +80,53 @@ export default function Component() {
     }
   };
 
+  const handleWalletChange = (value: string) => {
+    setSelectedWallet(value);
+    // Reset input value when changing wallets
+    setInputValue("");
+  };
+
   const handleStartUnauthenticated = () => {
     const amount = parseInt(inputValue) || 0;
-    if (balance !== null && amount <= balance) {
-      setBalance(balance - amount);
+    const currentBalance =
+      walletBalances[selectedWallet as keyof WalletBalances];
+
+    if (amount <= currentBalance) {
+      // Update the selected wallet balance
+      setWalletBalances({
+        ...walletBalances,
+        [selectedWallet]: currentBalance - amount,
+      });
       setGameActive(true);
-      createToastWithClose(`Starting game with ${amount} coins`, "🎮");
+      createToastWithClose(
+        `Starting game with ${amount} coins from ${selectedWallet}`,
+        "🎮"
+      );
     } else {
-      createToastWithClose("Insufficient balance!", "⚠️");
+      createToastWithClose(`Insufficient ${selectedWallet} balance!`, "⚠️");
     }
   };
 
   const handleGameWinUnauth = (winAmount: number) => {
-    if (balance !== null) {
-      setBalance(balance + winAmount);
+    // Apply the same rules as the backend for unauthenticated users
+    const updatedBalances = { ...walletBalances };
+    const stake = parseInt(inputValue) || 0;
+
+    if (selectedWallet === "balance" || selectedWallet === "with_balance") {
+      // If using balance or with_balance wallet, winnings go to with_balance
+      updatedBalances.with_balance += winAmount;
+    } else if (selectedWallet === "bonus") {
+      // If using bonus wallet, check for 50% rule
+      if (winAmount > stake * 1.5) {
+        // If winnings are more than 50% of stake, add to with_balance
+        updatedBalances.with_balance += winAmount;
+      } else {
+        // Otherwise, add back to bonus wallet
+        updatedBalances.bonus += winAmount;
+      }
     }
+
+    setWalletBalances(updatedBalances);
     setGameActive(false);
   };
 
@@ -109,20 +135,31 @@ export default function Component() {
   };
 
   const handleStart = async () => {
-    if (balance === null) return;
-    
     const amount = parseInt(inputValue) || 0;
-    if (amount <= balance) {
+    const currentBalance =
+      walletBalances[selectedWallet as keyof WalletBalances];
+
+    if (amount <= currentBalance) {
       if (authToken) {
         try {
           const api = createApiClient(authToken);
-          const response = await api.post("/fruit-game/start", { stake: amount });
+          const response = await api.post("/fruit-game/start", {
+            stake: amount,
+            walletType: selectedWallet,
+          });
 
           if (response.status === 200) {
-            // Update the balance with the response from the API
-            setBalance(response.data.balance);
+            // Update all balances with the response from the API
+            setWalletBalances({
+              balance: response.data.balance,
+              bonus: response.data.bonus,
+              with_balance: response.data.with_balance,
+            });
             setGameActive(true);
-            createToastWithClose(`Starting game with ${amount} coins`, "🎮");
+            createToastWithClose(
+              `Starting game with ${amount} coins from ${selectedWallet}`,
+              "🎮"
+            );
           }
         } catch (error: any) {
           if (error?.response?.status === 401) {
@@ -141,7 +178,7 @@ export default function Component() {
         handleStartUnauthenticated();
       }
     } else {
-      createToastWithClose("Insufficient balance!", "⚠️");
+      createToastWithClose(`Insufficient ${selectedWallet} balance!`, "⚠️");
     }
   };
 
@@ -157,8 +194,12 @@ export default function Component() {
         });
 
         if (response.status === 200) {
-          // Update the frontend balance
-          setBalance(response.data.balance);
+          // Update the frontend balances
+          setWalletBalances({
+            balance: response.data.balance,
+            bonus: response.data.bonus,
+            with_balance: response.data.with_balance,
+          });
           setGameActive(false);
           createToastWithClose(`You won ${winAmount} coins!`, "🎉");
         }
@@ -168,10 +209,13 @@ export default function Component() {
           handleGameWinUnauth(winAmount);
         } else {
           // Handle error (e.g., server or network issues)
+          const errorMsg =
+            error?.response?.data?.message || error.message || "Unknown error";
           createToastWithClose(
-            "An error occurred during cashout. Please try again.",
+            `An error occurred during cashout: ${errorMsg}`,
             "⚠️"
           );
+          console.error("Cashout error:", error); // optional logging
         }
       }
     } else {
@@ -184,9 +228,16 @@ export default function Component() {
       try {
         const api = createApiClient(authToken);
         // Call the backend to mark the game as lost
-        await api.post("/fruit-game/lose", {
+        const response = await api.post("/fruit-game/lose", {
           score: null,
           data: null,
+        });
+
+        // Update balances
+        setWalletBalances({
+          balance: response.data.balance,
+          bonus: response.data.bonus,
+          with_balance: response.data.with_balance,
         });
 
         setGameActive(false);
@@ -209,24 +260,24 @@ export default function Component() {
   };
 
   const handleMin = () => {
-    setInputValue("1");
+    setInputValue("10");
     createToastWithClose("Set to minimum bet", "⬇️");
   };
 
   const handleMax = () => {
-    if (balance !== null) {
-      setInputValue(balance.toString());
-      createToastWithClose("Set to maximum bet", "⬆️");
-    }
+    const currentBalance =
+      walletBalances[selectedWallet as keyof WalletBalances];
+    setInputValue(currentBalance.toString());
+    createToastWithClose("Set to maximum bet", "⬆️");
   };
 
   const handleDouble = () => {
-    if (balance !== null) {
-      const current = parseInt(inputValue) || 0;
-      const newValue = Math.min(current * 2, balance);
-      setInputValue(newValue.toString());
-      createToastWithClose("Doubled bet amount", "✖️");
-    }
+    const currentBalance =
+      walletBalances[selectedWallet as keyof WalletBalances];
+    const current = parseInt(inputValue) || 0;
+    const newValue = Math.min(current * 2, currentBalance);
+    setInputValue(newValue.toString());
+    createToastWithClose("Doubled bet amount", "✖️");
   };
 
   const handleHalf = () => {
@@ -236,19 +287,17 @@ export default function Component() {
     createToastWithClose("Halved bet amount", "➗");
   };
 
-  const isInputValid =
-    balance !== null && inputValue && parseInt(inputValue) > 0 && parseInt(inputValue) <= balance;
+  const currentBalance = walletBalances[selectedWallet as keyof WalletBalances];
+  const isInputValid = Boolean(
+    inputValue &&
+      !isNaN(Number(inputValue)) &&
+      parseInt(inputValue) > 0 &&
+      parseInt(inputValue) <= currentBalance
+  );
 
   // Loading Screen
   if (isLoading) {
-    return (
-      <div className="fixed inset-0 bg-green-50 bg-opacity-90 backdrop-blur-sm flex items-center justify-center z-50">
-        <div className="text-center space-y-4">
-          <Loader2 className="w-12 h-12 text-green-600 animate-spin mx-auto" />
-          <p className="text-xl font-medium text-green-800">Authenticating...</p>
-        </div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   const mainContent = gameActive ? (
@@ -258,83 +307,21 @@ export default function Component() {
       onLose={handleGameLose}
     />
   ) : (
-    <div className="min-h-screen bg-gradient-to-b from-green-50 to-white relative mx-auto max-w-screen-lg">
-      <div className="px-6 py-8 space-y-6">
-        {/* Balance Card */}
-        <div className="bg-white rounded-3xl p-6 shadow-lg">
-          <div className="flex items-center justify-between">
-            <span className="text-[#2E8B57] text-xl font-medium">
-              Current Balance
-            </span>
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8">
-                <Disc className="w-full h-full text-amber-500" />
-              </div>
-              <span className="text-[#2E8B57] text-4xl font-bold">
-                {balance}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Reset Button */}
-        <Button
-          className="w-full h-14 bg-[#2E8B57] hover:bg-[#228B22] text-white rounded-3xl font-medium text-xl shadow-lg"
-          onClick={handleReset}
-        >
-          RESET TO &#8355; {balance}
-        </Button>
-      </div>
-
-      {/* Fixed Bottom Section */}
-      <div className="fixed bottom-0 left-0 right-0 px-6 pb-8 space-y-4 bg-gradient-to-t from-white to-transparent pt-8 mx-auto max-w-screen-lg">
-        {/* Operation Buttons */}
-        <div className="grid grid-cols-4 gap-4">
-          {[
-            { label: "Min", onClick: handleMin },
-            { label: "X2", onClick: handleDouble },
-            { label: "X/2", onClick: handleHalf },
-            { label: "Max", onClick: handleMax },
-          ].map((btn) => (
-            <Button
-              key={btn.label}
-              variant="secondary"
-              className="h-12 bg-[#2E8B57] hover:bg-[#228B22] text-white rounded-2xl font-medium text-lg shadow-md"
-              onClick={btn.onClick}
-            >
-              {btn.label}
-            </Button>
-          ))}
-        </div>
-
-        {/* Input Field */}
-        <div className="relative">
-          <Input
-            type="text"
-            value={inputValue}
-            onChange={handleInputChange}
-            className="w-full h-14 bg-green-900 text-white rounded-3xl px-6 text-center text-2xl font-medium border-0 shadow-lg"
-            placeholder="Enter amount"
-          />
-        </div>
-
-        {/* Start Button */}
-        <div className="relative">
-          <Button
-            className="w-full h-14 bg-[#2E8B57] hover:bg-[#228B22] disabled:bg-gray-400 text-white rounded-3xl font-medium text-xl shadow-lg"
-            onClick={handleStart}
-            disabled={!isInputValid}
-          >
-            START
-          </Button>
-          <div className="absolute right-4 bottom-4">
-            <div className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center">
-              <Layers className="w-5 h-5" />
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <MainContent
+      walletBalances={walletBalances}
+      selectedWallet={selectedWallet}
+      currentBalance={currentBalance}
+      inputValue={inputValue}
+      isInputValid={isInputValid}
+      handleReset={handleReset}
+      handleInputChange={handleInputChange}
+      handleWalletChange={handleWalletChange}
+      handleMin={handleMin}
+      handleMax={handleMax}
+      handleDouble={handleDouble}
+      handleHalf={handleHalf}
+      handleStart={handleStart}
+    />
   );
 
   return (
