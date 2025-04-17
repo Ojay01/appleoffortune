@@ -41,16 +41,16 @@ export const MainContent = ({
 }: MainContentProps) => (
   <div className="min-h-screen bg-gradient-to-b from-green-50 to-white relative pb-40 md:pb-32">
     <Header />
-    
+
     <div className="max-w-md mx-auto px-4 py-6 md:max-w-screen-md lg:max-w-screen-lg">
-      <BalanceSummary 
-        balance={walletBalances.balance} 
-        bonus={walletBalances.bonus} 
-        withBalance={walletBalances.with_balance} 
+      <BalanceSummary
+        balance={walletBalances.balance}
+        bonus={walletBalances.bonus}
+        withBalance={walletBalances.with_balance}
       />
-      
+
       <SelectedWallet balance={currentBalance} />
-      
+
       <Button
         className="w-full py-3 bg-green-700 hover:bg-green-800 text-white rounded-xl font-medium text-lg shadow-md mb-6"
         onClick={handleReset}
@@ -59,19 +59,18 @@ export const MainContent = ({
       </Button>
     </div>
     <div className="my-16">
-    <GameControls
-      selectedWallet={selectedWallet}
-      onWalletChange={handleWalletChange}
-      inputValue={inputValue}
-      onInputChange={handleInputChange}
-      onMin={handleMin}
-      onMax={handleMax}
-      onDouble={handleDouble}
-      onHalf={handleHalf}
-      onStart={handleStart}
-      isInputValid={isInputValid}
-    />
+      <GameControls
+        selectedWallet={selectedWallet}
+        onWalletChange={handleWalletChange}
+        inputValue={inputValue}
+        onInputChange={handleInputChange}
+        onMin={handleMin}
+        onMax={handleMax}
+        onDouble={handleDouble}
+        onHalf={handleHalf}
+        onStart={handleStart}
+        isInputValid={isInputValid}
+      />
     </div>
-
   </div>
 );

@@ -30,8 +30,16 @@ export const GameControls = ({
 }: GameControlsProps) => (
   <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-green-100 shadow-lg pt-3 pb-6 px-4">
     <div className="max-w-md mx-auto space-y-3 md:max-w-screen-md lg:max-w-screen-lg">
-      <WalletSelector selectedWallet={selectedWallet} onWalletChange={onWalletChange} />
-      <BetControls onMin={onMin} onMax={onMax} onDouble={onDouble} onHalf={onHalf} />
+      <WalletSelector
+        selectedWallet={selectedWallet}
+        onWalletChange={onWalletChange}
+      />
+      <BetControls
+        onMin={onMin}
+        onMax={onMax}
+        onDouble={onDouble}
+        onHalf={onHalf}
+      />
       <BetInput value={inputValue} onChange={onInputChange} />
       <Button
         className="w-full h-12 bg-green-700 hover:bg-green-800 disabled:bg-gray-400 text-white rounded-xl font-medium text-lg shadow-md"

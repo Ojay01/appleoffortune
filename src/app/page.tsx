@@ -88,8 +88,9 @@ export default function FortuneGamePage() {
 
   const handleStartUnauthenticated = () => {
     const amount = parseInt(inputValue) || 0;
-    const currentBalance = walletBalances[selectedWallet as keyof WalletBalances];
-    
+    const currentBalance =
+      walletBalances[selectedWallet as keyof WalletBalances];
+
     if (amount <= currentBalance) {
       // Update the selected wallet balance
       setWalletBalances({
@@ -97,7 +98,10 @@ export default function FortuneGamePage() {
         [selectedWallet]: currentBalance - amount,
       });
       setGameActive(true);
-      createToastWithClose(`Starting game with ${amount} coins from ${selectedWallet}`, "🎮");
+      createToastWithClose(
+        `Starting game with ${amount} coins from ${selectedWallet}`,
+        "🎮"
+      );
     } else {
       createToastWithClose(`Insufficient ${selectedWallet} balance!`, "⚠️");
     }
@@ -105,9 +109,9 @@ export default function FortuneGamePage() {
 
   const handleGameWinUnauth = (winAmount: number) => {
     // Apply the same rules as the backend for unauthenticated users
-    let updatedBalances = { ...walletBalances };
+    const updatedBalances = { ...walletBalances };
     const stake = parseInt(inputValue) || 0;
-    
+
     if (selectedWallet === "balance" || selectedWallet === "with_balance") {
       // If using balance or with_balance wallet, winnings go to with_balance
       updatedBalances.with_balance += winAmount;
@@ -121,7 +125,7 @@ export default function FortuneGamePage() {
         updatedBalances.bonus += winAmount;
       }
     }
-    
+
     setWalletBalances(updatedBalances);
     setGameActive(false);
   };
@@ -132,15 +136,16 @@ export default function FortuneGamePage() {
 
   const handleStart = async () => {
     const amount = parseInt(inputValue) || 0;
-    const currentBalance = walletBalances[selectedWallet as keyof WalletBalances];
-    
+    const currentBalance =
+      walletBalances[selectedWallet as keyof WalletBalances];
+
     if (amount <= currentBalance) {
       if (authToken) {
         try {
           const api = createApiClient(authToken);
-          const response = await api.post("/fruit-game/start", { 
+          const response = await api.post("/fruit-game/start", {
             stake: amount,
-            walletType: selectedWallet
+            walletType: selectedWallet,
           });
 
           if (response.status === 200) {
@@ -151,7 +156,10 @@ export default function FortuneGamePage() {
               with_balance: response.data.with_balance,
             });
             setGameActive(true);
-            createToastWithClose(`Starting game with ${amount} coins from ${selectedWallet}`, "🎮");
+            createToastWithClose(
+              `Starting game with ${amount} coins from ${selectedWallet}`,
+              "🎮"
+            );
           }
         } catch (error: any) {
           if (error?.response?.status === 401) {
@@ -202,12 +210,12 @@ export default function FortuneGamePage() {
         } else {
           // Handle error (e.g., server or network issues)
           const errorMsg =
-          error?.response?.data?.message || error.message || "Unknown error";
-        createToastWithClose(
-          `An error occurred during cashout: ${errorMsg}`,
-          "⚠️"
-        );
-        console.error("Cashout error:", error); // optional logging
+            error?.response?.data?.message || error.message || "Unknown error";
+          createToastWithClose(
+            `An error occurred during cashout: ${errorMsg}`,
+            "⚠️"
+          );
+          console.error("Cashout error:", error); // optional logging
         }
       }
     } else {
@@ -257,13 +265,15 @@ export default function FortuneGamePage() {
   };
 
   const handleMax = () => {
-    const currentBalance = walletBalances[selectedWallet as keyof WalletBalances];
+    const currentBalance =
+      walletBalances[selectedWallet as keyof WalletBalances];
     setInputValue(currentBalance.toString());
     createToastWithClose("Set to maximum bet", "⬆️");
   };
 
   const handleDouble = () => {
-    const currentBalance = walletBalances[selectedWallet as keyof WalletBalances];
+    const currentBalance =
+      walletBalances[selectedWallet as keyof WalletBalances];
     const current = parseInt(inputValue) || 0;
     const newValue = Math.min(current * 2, currentBalance);
     setInputValue(newValue.toString());
@@ -278,7 +288,12 @@ export default function FortuneGamePage() {
   };
 
   const currentBalance = walletBalances[selectedWallet as keyof WalletBalances];
-  const isInputValid = inputValue && parseInt(inputValue) > 0 && parseInt(inputValue) <= currentBalance;
+  const isInputValid = Boolean(
+    inputValue &&
+      !isNaN(Number(inputValue)) &&
+      parseInt(inputValue) > 0 &&
+      parseInt(inputValue) <= currentBalance
+  );
 
   // Loading Screen
   if (isLoading) {
