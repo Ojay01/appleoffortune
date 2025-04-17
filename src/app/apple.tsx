@@ -38,6 +38,7 @@ const createToastWithClose = (message: string, icon?: string) => {
       <button
         onClick={() => toast.dismiss(toastId)}
         className="ml-4 hover:bg-white/20 rounded-full p-1 transition-colors"
+        title="Close notification"
       >
         <X size={16} color="white" />
       </button>
@@ -140,6 +141,8 @@ export default function FruitFortuneGame({
 
       const newMultiplier = calculateMultiplier(rowIndex);
       setCurrentMultiplier(newMultiplier);
+
+
       addNewRow();
       createToastWithClose(
         `Perfect! New row added! Current multiplier: x${newMultiplier.toFixed(
@@ -148,9 +151,9 @@ export default function FruitFortuneGame({
         "🎯"
       );
     } else {
-      setCurrentRow(rowIndex - 1);
-      const newMultiplier = calculateMultiplier(rowIndex - 1);
-      setCurrentMultiplier(newMultiplier);
+  const newMultiplier = calculateMultiplier(rowIndex); // <-- fix: use current row
+setCurrentMultiplier(newMultiplier);
+setCurrentRow(rowIndex - 1);
       createToastWithClose(
         ` Found! Current multiplier: x${newMultiplier.toFixed(2)}`,
         FRUIT_EMOJIS[fruitAtPosition as FruitType]
