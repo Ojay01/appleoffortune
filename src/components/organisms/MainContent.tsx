@@ -25,7 +25,7 @@ type MainContentProps = {
 };
 
 export const MainContent = ({
-  walletBalances,
+  // walletBalances,
   selectedWallet,
   currentBalance,
   inputValue,
