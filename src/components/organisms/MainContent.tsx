@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { BalanceSummary } from "./BalanceSummary";
+// import { BalanceSummary } from "./BalanceSummary";
 import { SelectedWallet } from "../molecules/SelectedWallet";
 import { Header } from "../molecules/Header";
 import { GameControls } from "./GameControls";
@@ -25,7 +25,7 @@ type MainContentProps = {
 };
 
 export const MainContent = ({
-  walletBalances,
+  // walletBalances,
   selectedWallet,
   currentBalance,
   inputValue,
@@ -43,13 +43,13 @@ export const MainContent = ({
     <Header />
 
     <div className="max-w-md mx-auto px-4 py-6 md:max-w-screen-md lg:max-w-screen-lg">
-      <BalanceSummary
+      {/* <BalanceSummary
         balance={walletBalances.balance}
         bonus={walletBalances.bonus}
         withBalance={walletBalances.with_balance}
-      />
+      /> */}
 
-      <SelectedWallet balance={currentBalance} />
+      <SelectedWallet wallet={selectedWallet} balance={currentBalance} />
 
       <Button
         className="w-full py-3 bg-green-700 hover:bg-green-800 text-white rounded-xl font-medium text-lg shadow-md mb-6"
