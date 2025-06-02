@@ -8,7 +8,11 @@ type GameState = "waiting" | "playing" | "won" | "lost" | "revealing";
 type FruitType = "watermelon" | "strawberry" | "pawpaw" | "guava";
 type CardContent = FruitType | "snake" | null;
 type RevealedCards = Record<string, CardContent>;
-type FruitPositions = Record<number, number>;
+type RowConfiguration = {
+  fruitPositions: number[];
+  snakePositions: number[];
+};
+type GameGrid = Record<number, RowConfiguration>;
 
 interface FruitFortuneGameProps {
   stake: number;
@@ -55,6 +59,23 @@ const createToastWithClose = (message: string, icon?: string) => {
   );
 };
 
+// Generate random row configuration with 1-4 fruits (never 0 or 5)
+const generateRowConfiguration = (): RowConfiguration => {
+  const numFruits = Math.floor(Math.random() * 4) + 1; // 1, 2, 3, or 4 fruits
+  const positions = Array.from({ length: CARDS_PER_ROW }, (_, i) => i);
+  
+  // Shuffle positions array
+  for (let i = positions.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [positions[i], positions[j]] = [positions[j], positions[i]];
+  }
+  
+  const fruitPositions = positions.slice(0, numFruits);
+  const snakePositions = positions.slice(numFruits);
+  
+  return { fruitPositions, snakePositions };
+};
+
 export default function FruitFortuneGame({
   stake,
   onWin,
@@ -63,39 +84,44 @@ export default function FruitFortuneGame({
   const [gameState, setGameState] = useState<GameState>("waiting");
   const [currentRow, setCurrentRow] = useState(INITIAL_ROWS - 1);
   const [revealedCards, setRevealedCards] = useState<RevealedCards>({});
-  const [fruitPositions, setFruitPositions] = useState<FruitPositions>({});
+  const [gameGrid, setGameGrid] = useState<GameGrid>({});
   const [currentMultiplier, setCurrentMultiplier] = useState(0);
   const [extraRows, setExtraRows] = useState(0);
 
   useEffect(() => {
-    const positions: FruitPositions = {};
+    const grid: GameGrid = {};
     for (let i = 0; i < INITIAL_ROWS; i++) {
-      positions[i] = Math.floor(Math.random() * CARDS_PER_ROW);
+      grid[i] = generateRowConfiguration();
     }
-    setFruitPositions(positions);
+    setGameGrid(grid);
   }, []);
 
   const addNewRow = () => {
     setExtraRows((prev) => prev + 1);
     const newRowIndex = -extraRows - 1; // Negative indices for new rows above
-    setFruitPositions((prev) => ({
+    setGameGrid((prev) => ({
       ...prev,
-      [newRowIndex]: Math.floor(Math.random() * CARDS_PER_ROW),
+      [newRowIndex]: generateRowConfiguration(),
     }));
     setCurrentRow(newRowIndex);
   };
 
   const revealAllCards = () => {
     const allRevealed: RevealedCards = {};
-    Object.keys(fruitPositions).forEach((rowIndex) => {
+    Object.keys(gameGrid).forEach((rowIndex) => {
       const row = Number(rowIndex);
+      const config = gameGrid[row];
+      
       for (let columnIndex = 0; columnIndex < CARDS_PER_ROW; columnIndex++) {
         const key = `${row}-${columnIndex}`;
-        const fruitAtPosition =
-          fruitPositions[row] === columnIndex
-            ? FRUITS[Math.floor(Math.random() * FRUITS.length)]
-            : "snake";
-        allRevealed[key] = fruitAtPosition;
+        
+        if (config.fruitPositions.includes(columnIndex)) {
+          // Random fruit at this position
+          allRevealed[key] = FRUITS[Math.floor(Math.random() * FRUITS.length)];
+        } else {
+          // Snake at this position
+          allRevealed[key] = "snake";
+        }
       }
     });
     setRevealedCards(allRevealed);
@@ -110,17 +136,19 @@ export default function FruitFortuneGame({
       return;
     }
 
-    const fruitAtPosition =
-      fruitPositions[rowIndex] === columnIndex
-        ? FRUITS[Math.floor(Math.random() * FRUITS.length)]
-        : "snake";
+    const config = gameGrid[rowIndex];
+    const isFruit = config.fruitPositions.includes(columnIndex);
+    
+    const cardContent = isFruit
+      ? FRUITS[Math.floor(Math.random() * FRUITS.length)]
+      : "snake";
 
     setRevealedCards((prev) => ({
       ...prev,
-      [`${rowIndex}-${columnIndex}`]: fruitAtPosition,
+      [`${rowIndex}-${columnIndex}`]: cardContent,
     }));
 
-    if (fruitAtPosition === "snake") {
+    if (cardContent === "snake") {
       setGameState("revealing");
       createToastWithClose(
         "Game Over! You hit a snake! Revealing all cards...",
@@ -135,13 +163,11 @@ export default function FruitFortuneGame({
         onLose();
       }, 3000);
     } else if (
-      rowIndex === Math.min(...Object.keys(fruitPositions).map(Number))
+      rowIndex === Math.min(...Object.keys(gameGrid).map(Number))
     ) {
       // When at the top row, add a new row and continue
-
       const newMultiplier = calculateMultiplier(rowIndex);
       setCurrentMultiplier(newMultiplier);
-
 
       addNewRow();
       createToastWithClose(
@@ -151,12 +177,12 @@ export default function FruitFortuneGame({
         "🎯"
       );
     } else {
-  const newMultiplier = calculateMultiplier(rowIndex); // <-- fix: use current row
-setCurrentMultiplier(newMultiplier);
-setCurrentRow(rowIndex - 1);
+      const newMultiplier = calculateMultiplier(rowIndex);
+      setCurrentMultiplier(newMultiplier);
+      setCurrentRow(rowIndex - 1);
       createToastWithClose(
-        ` Found! Current multiplier: x${newMultiplier.toFixed(2)}`,
-        FRUIT_EMOJIS[fruitAtPosition as FruitType]
+        `Fruit Found! Current multiplier: x${newMultiplier.toFixed(2)}`,
+        FRUIT_EMOJIS[cardContent as FruitType]
       );
     }
   };
@@ -200,11 +226,12 @@ setCurrentRow(rowIndex - 1);
     setCurrentMultiplier(0);
     setExtraRows(0);
 
-    const positions: FruitPositions = {};
+    const grid: GameGrid = {};
     for (let i = 0; i < INITIAL_ROWS; i++) {
-      positions[i] = Math.floor(Math.random() * CARDS_PER_ROW);
+      grid[i] = generateRowConfiguration();
     }
-    setFruitPositions(positions);
+    setGameGrid(grid);
+    
     createToastWithClose(
       "Game Started! Find the fruits and avoid the snakes. Good luck!",
       "🎮"
@@ -232,6 +259,13 @@ setCurrentRow(rowIndex - 1);
     return indices;
   };
 
+  // Get win probability for display (fruits/total cards)
+  const getWinProbability = (rowIndex: number): string => {
+    const config = gameGrid[rowIndex];
+    if (!config) return "0/5";
+    return `${config.fruitPositions.length}/5`;
+  };
+
   return (
     <div className="w-full max-w-md mx-auto flex flex-col h-[calc(100vh-2rem)] gap-4 p-4">
       {/* Top Balance Display */}
@@ -256,13 +290,16 @@ setCurrentRow(rowIndex - 1);
             <div className="w-12 md:w-16 text-right font-bold text-green-600 text-sm md:text-base">
               x{calculateMultiplier(rowIndex)}
             </div>
+            <div className="w-8 text-center text-xs text-gray-500">
+              {getWinProbability(rowIndex)}
+            </div>
             <div className="flex-1 grid grid-cols-5 gap-1 md:gap-2">
               {Array.from({ length: CARDS_PER_ROW }).map((_, columnIndex) => {
                 const revealedContent =
                   revealedCards[`${rowIndex}-${columnIndex}`];
                 const isRevealed = !!revealedContent;
-                const isPositionFruit =
-                  fruitPositions[rowIndex] === columnIndex;
+                const config = gameGrid[rowIndex];
+                const isFruitPosition = config?.fruitPositions.includes(columnIndex);
 
                 const cardContent = isRevealed
                   ? revealedContent === "snake"
@@ -285,7 +322,9 @@ setCurrentRow(rowIndex - 1);
                       aspect-square rounded-lg flex items-center justify-center text-base md:text-2xl relative
                       ${
                         isRevealed
-                          ? "bg-green-100 shadow-inner"
+                          ? revealedContent === "snake"
+                            ? "bg-red-100 shadow-inner"
+                            : "bg-green-100 shadow-inner"
                           : "bg-green-200/50 shadow-md"
                       }
                       ${
@@ -296,7 +335,8 @@ setCurrentRow(rowIndex - 1);
                     `}
                   >
                     {cardContent}
-                    {!isRevealed && isPositionFruit && (
+                    {/* Debug hint - remove in production */}
+                    {process.env.NODE_ENV === 'development' && !isRevealed && isFruitPosition && (
                       <span className="absolute text-[8px] md:text-xs bottom-1 right-1 text-green-600">
                         🍎
                       </span>
