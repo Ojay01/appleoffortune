@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Button } from "../components/ui/button";
 import toast from "react-hot-toast";
 import { X } from "lucide-react";
-import LiveBets from "@/components/organisms/LiveBets";
+// import LiveBets from "@/components/organisms/LiveBets";
 
 type GameState = "waiting" | "playing" | "won" | "lost" | "revealing";
 type FruitType = "watermelon" | "strawberry" | "pawpaw" | "guava";
