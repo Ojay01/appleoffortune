@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { Button } from "../components/ui/button";
 import toast from "react-hot-toast";
 import { X } from "lucide-react";
+// import LiveBets from "@/components/organisms/LiveBets";
 
 type GameState = "waiting" | "playing" | "won" | "lost" | "revealing";
 type FruitType = "watermelon" | "strawberry" | "pawpaw" | "guava";
@@ -59,9 +60,42 @@ const createToastWithClose = (message: string, icon?: string) => {
   );
 };
 
-// Generate random row configuration with 1-4 fruits (never 0 or 5)
-const generateRowConfiguration = (): RowConfiguration => {
-  const numFruits = Math.floor(Math.random() * 4) + 1; // 1, 2, 3, or 4 fruits
+// Calculate dynamic fruit count based on stake and successful rows
+const calculateFruitCount = (stake: number, successfulRows: number): number => {
+  // Base probability logic based on stake amount with random selection
+  let baseFruitCount: number;
+  
+  if (stake < 500) {
+    // Random between 3/5 and 4/5 (3 or 4 fruits)
+    baseFruitCount = Math.random() < 0.5 ? 3 : 4;
+  } else if (stake < 1000) {
+    // Random between 2/5 and 3/5 (2 or 3 fruits)
+    baseFruitCount = Math.random() < 0.5 ? 2 : 3;
+  } else if (stake < 5000) {
+    // Random between 1/5 and 3/5 (1, 2, or 3 fruits)
+    const rand = Math.random();
+    if (rand < 0.33) baseFruitCount = 1;
+    else if (rand < 0.66) baseFruitCount = 2;
+    else baseFruitCount = 3;
+  } else {
+    // Stakes >= 5000: Random between 1/5 and 2/5 (1 or 2 fruits)
+    baseFruitCount = Math.random() < 0.5 ? 1 : 2;
+  }
+  
+  // Progressive difficulty: reduce probability as player advances
+  if (successfulRows >= 5) {
+    baseFruitCount = Math.max(1, baseFruitCount - 1);
+  }
+  if (successfulRows >= 10) {
+    baseFruitCount = 1; // Always 1/5 after 10 successful rows
+  }
+  
+  return baseFruitCount;
+};
+
+// Generate row configuration with dynamic difficulty
+const generateRowConfiguration = (stake: number, successfulRows: number): RowConfiguration => {
+  const numFruits = calculateFruitCount(stake, successfulRows);
   const positions = Array.from({ length: CARDS_PER_ROW }, (_, i) => i);
   
   // Shuffle positions array
@@ -87,21 +121,22 @@ export default function FruitFortuneGame({
   const [gameGrid, setGameGrid] = useState<GameGrid>({});
   const [currentMultiplier, setCurrentMultiplier] = useState(0);
   const [extraRows, setExtraRows] = useState(0);
+  const [successfulRows, setSuccessfulRows] = useState(0);
 
   useEffect(() => {
     const grid: GameGrid = {};
     for (let i = 0; i < INITIAL_ROWS; i++) {
-      grid[i] = generateRowConfiguration();
+      grid[i] = generateRowConfiguration(stake, 0);
     }
     setGameGrid(grid);
-  }, []);
+  }, [stake]);
 
   const addNewRow = () => {
     setExtraRows((prev) => prev + 1);
     const newRowIndex = -extraRows - 1; // Negative indices for new rows above
     setGameGrid((prev) => ({
       ...prev,
-      [newRowIndex]: generateRowConfiguration(),
+      [newRowIndex]: generateRowConfiguration(stake, successfulRows),
     }));
     setCurrentRow(newRowIndex);
   };
@@ -162,28 +197,29 @@ export default function FruitFortuneGame({
         setGameState("lost");
         onLose();
       }, 3000);
-    } else if (
-      rowIndex === Math.min(...Object.keys(gameGrid).map(Number))
-    ) {
-      // When at the top row, add a new row and continue
-      const newMultiplier = calculateMultiplier(rowIndex);
-      setCurrentMultiplier(newMultiplier);
-
-      addNewRow();
-      createToastWithClose(
-        `Perfect! New row added! Current multiplier: x${newMultiplier.toFixed(
-          2
-        )}`,
-        "🎯"
-      );
     } else {
-      const newMultiplier = calculateMultiplier(rowIndex);
-      setCurrentMultiplier(newMultiplier);
-      setCurrentRow(rowIndex - 1);
-      createToastWithClose(
-        `Fruit Found! Current multiplier: x${newMultiplier.toFixed(2)}`,
-        FRUIT_EMOJIS[cardContent as FruitType]
-      );
+      // Increment successful rows counter
+      setSuccessfulRows(prev => prev + 1);
+      
+      if (rowIndex === Math.min(...Object.keys(gameGrid).map(Number))) {
+        // When at the top row, add a new row and continue
+        const newMultiplier = calculateMultiplier(rowIndex);
+        setCurrentMultiplier(newMultiplier);
+
+        addNewRow();
+        createToastWithClose(
+          `Perfect! New row added! Current multiplier: x${newMultiplier.toFixed(2)}`,
+          "🎯"
+        );
+      } else {
+        const newMultiplier = calculateMultiplier(rowIndex);
+        setCurrentMultiplier(newMultiplier);
+        setCurrentRow(rowIndex - 1);
+        createToastWithClose(
+          `Fruit Found! Current multiplier: x${newMultiplier.toFixed(2)}`,
+          FRUIT_EMOJIS[cardContent as FruitType]
+        );
+      }
     }
   };
 
@@ -225,10 +261,11 @@ export default function FruitFortuneGame({
     setRevealedCards({});
     setCurrentMultiplier(0);
     setExtraRows(0);
+    setSuccessfulRows(0);
 
     const grid: GameGrid = {};
     for (let i = 0; i < INITIAL_ROWS; i++) {
-      grid[i] = generateRowConfiguration();
+      grid[i] = generateRowConfiguration(stake, 0);
     }
     setGameGrid(grid);
     
@@ -259,13 +296,6 @@ export default function FruitFortuneGame({
     return indices;
   };
 
-  // Get win probability for display (fruits/total cards)
-  const getWinProbability = (rowIndex: number): string => {
-    const config = gameGrid[rowIndex];
-    if (!config) return "0/5";
-    return `${config.fruitPositions.length}/5`;
-  };
-
   return (
     <div className="w-full max-w-md mx-auto flex flex-col h-[calc(100vh-2rem)] gap-4 p-4">
       {/* Top Balance Display */}
@@ -289,9 +319,6 @@ export default function FruitFortuneGame({
           <div key={rowIndex} className="flex gap-2 items-center">
             <div className="w-12 md:w-16 text-right font-bold text-green-600 text-sm md:text-base">
               x{calculateMultiplier(rowIndex)}
-            </div>
-            <div className="w-8 text-center text-xs text-gray-500">
-              {getWinProbability(rowIndex)}
             </div>
             <div className="flex-1 grid grid-cols-5 gap-1 md:gap-2">
               {Array.from({ length: CARDS_PER_ROW }).map((_, columnIndex) => {
@@ -372,6 +399,9 @@ export default function FruitFortuneGame({
           </div>
         )}
       </div>
+
+
+      {/* <LiveBets /> */}
     </div>
   );
 }
