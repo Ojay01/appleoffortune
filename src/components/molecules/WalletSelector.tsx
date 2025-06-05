@@ -14,6 +14,7 @@ export const WalletSelector = ({ selectedWallet, onWalletChange }: WalletSelecto
       <SelectItem value="balance">Main Balance</SelectItem>
       <SelectItem value="bonus">Bonus Balance</SelectItem>
       <SelectItem value="with_balance">Withdrawable Balance</SelectItem>
+      <SelectItem value="commission">Commission Wallet</SelectItem>
     </SelectContent>
   </Select>
 );
