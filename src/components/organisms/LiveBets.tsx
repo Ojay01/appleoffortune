@@ -112,7 +112,7 @@ useEffect(() => {
         </div>
         {isExpanded && (
           <div className="px-4 pb-4 max-h-64 overflow-y-auto">
-            {renderBetList(liveBets.slice(0, 6))}
+            {renderBetList(liveBets)}
           </div>
         )}
       </div>
