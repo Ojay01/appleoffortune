@@ -3,16 +3,19 @@ import { Button } from "@/components/ui/button";
 import { SelectedWallet } from "../molecules/SelectedWallet";
 import { Header } from "../molecules/Header";
 import { GameControls } from "./GameControls";
+import LiveBets from "./LiveBets";
 
 type MainContentProps = {
   walletBalances: {
     balance: number;
     bonus: number;
     with_balance: number;
+    commission: number;
   };
   selectedWallet: string;
   currentBalance: number;
   inputValue: string;
+  authToken: string;
   isInputValid: boolean;
   handleReset: () => void;
   handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -30,6 +33,7 @@ export const MainContent = ({
   currentBalance,
   inputValue,
   isInputValid,
+  authToken,
   handleReset,
   handleInputChange,
   handleWalletChange,
@@ -57,6 +61,9 @@ export const MainContent = ({
       >
         RESET
       </Button>
+    </div>
+    <div className="max-w-md mx-auto mb-32 px-4 md:max-w-screen-md lg:max-w-screen-lg">
+      <LiveBets isMobile={true} authToken={authToken} />
     </div>
     <div className="my-16">
       <GameControls

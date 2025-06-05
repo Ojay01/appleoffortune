@@ -11,13 +11,15 @@ interface WalletBalances {
   balance: number;
   bonus: number;
   with_balance: number;
+  commission: number;
 }
 
 export default function FortuneGamePage() {
   const [walletBalances, setWalletBalances] = useState<WalletBalances>({
-    balance: 100,
-    bonus: 0,
-    with_balance: 0,
+    balance: 1000,
+    bonus: 750,
+    with_balance: 5000,
+    commission: 250,
   });
   const [selectedWallet, setSelectedWallet] = useState<string>("balance");
   const [inputValue, setInputValue] = useState("10");
@@ -42,22 +44,25 @@ export default function FortuneGamePage() {
             balance: response.data.balance,
             bonus: response.data.bonus,
             with_balance: response.data.with_balance,
+            commission: response.data.commission,
           });
         } else {
           // For unauthenticated users, use default balances
           setWalletBalances({
-            balance: 100,
-            bonus: 0,
-            with_balance: 0,
+            balance: 1000,
+            bonus: 750,
+            with_balance: 500,
+            commission: 250,
           });
         }
       } catch (error) {
         console.error("Error fetching balances:", error);
         // Fallback to default balances on error
         setWalletBalances({
-          balance: 100,
-          bonus: 0,
-          with_balance: 0,
+          balance: 1000,
+          bonus: 750,
+          with_balance: 500,
+          commission: 250,
         });
       } finally {
         setIsLoading(false);
@@ -66,6 +71,19 @@ export default function FortuneGamePage() {
 
     fetchBalances();
   }, [authToken]);
+
+useEffect(() => {
+  if (authToken) {
+    const navEntries = performance.getEntriesByType("navigation");
+    const navTiming = navEntries[0] as PerformanceNavigationTiming | undefined;
+
+    if (navTiming?.type === "reload") {
+      handleGameLose();
+    }
+  }
+}, [authToken]);
+
+
 
   const handleReset = () => {
     setInputValue("");
@@ -107,28 +125,32 @@ export default function FortuneGamePage() {
     }
   };
 
-  const handleGameWinUnauth = (winAmount: number) => {
-    // Apply the same rules as the backend for unauthenticated users
-    const updatedBalances = { ...walletBalances };
-    const stake = parseInt(inputValue) || 0;
+const handleGameWinUnauth = (winAmount: number) => {
+  // Apply the same rules as the backend for unauthenticated users
+  const updatedBalances = { ...walletBalances };
+  const stake = parseInt(inputValue) || 0;
 
-    if (selectedWallet === "balance" || selectedWallet === "with_balance") {
-      // If using balance or with_balance wallet, winnings go to with_balance
+  if (selectedWallet === "balance" || selectedWallet === "with_balance") {
+    // If using balance or with_balance wallet, winnings go to with_balance
+    updatedBalances.with_balance += winAmount;
+  } else if (selectedWallet === "bonus") {
+    // If using bonus wallet, check for 50% rule
+    if (winAmount > stake * 1.5) {
+      // If winnings are more than 50% of stake, add to with_balance
       updatedBalances.with_balance += winAmount;
-    } else if (selectedWallet === "bonus") {
-      // If using bonus wallet, check for 50% rule
-      if (winAmount > stake * 1.5) {
-        // If winnings are more than 50% of stake, add to with_balance
-        updatedBalances.with_balance += winAmount;
-      } else {
-        // Otherwise, add back to bonus wallet
-        updatedBalances.bonus += winAmount;
-      }
+    } else {
+      // Otherwise, add back to bonus wallet
+      updatedBalances.bonus += winAmount;
     }
+  } else if (selectedWallet === "commission") {
+    // If using commission wallet, winnings go to commission
+    updatedBalances.commission += winAmount;
+  }
 
-    setWalletBalances(updatedBalances);
-    setGameActive(false);
-  };
+  setWalletBalances(updatedBalances);
+  setGameActive(false);
+};
+
 
   const handleGameLoseUnauth = () => {
     setGameActive(false);
@@ -154,6 +176,7 @@ export default function FortuneGamePage() {
               balance: response.data.balance,
               bonus: response.data.bonus,
               with_balance: response.data.with_balance,
+              commission: response.data.commission,
             });
             setGameActive(true);
             createToastWithClose(
@@ -199,6 +222,7 @@ export default function FortuneGamePage() {
             balance: response.data.balance,
             bonus: response.data.bonus,
             with_balance: response.data.with_balance,
+            commission: response.data.commission,
           });
           setGameActive(false);
           createToastWithClose(`You won ${winAmount} coins!`, "🎉");
@@ -238,6 +262,7 @@ export default function FortuneGamePage() {
           balance: response.data.balance,
           bonus: response.data.bonus,
           with_balance: response.data.with_balance,
+          commission: response.data.commission,
         });
 
         setGameActive(false);
@@ -248,10 +273,10 @@ export default function FortuneGamePage() {
           handleGameLoseUnauth();
         } else {
           // Handle error (e.g., server or network issues)
-          createToastWithClose(
-            "An error occurred while losing the game. Please try again.",
-            "⚠️"
-          );
+          // createToastWithClose(
+          //   "An error occurred while losing the game. Please try again.",
+          //   "⚠️"
+          // );
         }
       }
     } else {
@@ -321,6 +346,7 @@ export default function FortuneGamePage() {
       handleDouble={handleDouble}
       handleHalf={handleHalf}
       handleStart={handleStart}
+      authToken={authToken || ""}
     />
   );
 
