@@ -26,9 +26,7 @@ type MainContentProps = {
   handleHalf: () => void;
   handleStart: () => void;
 };
-
 export const MainContent = ({
-  // walletBalances,
   selectedWallet,
   currentBalance,
   inputValue,
@@ -47,12 +45,6 @@ export const MainContent = ({
     <Header />
 
     <div className="max-w-md mx-auto px-4 py-6 md:max-w-screen-md lg:max-w-screen-lg">
-      {/* <BalanceSummary
-        balance={walletBalances.balance}
-        bonus={walletBalances.bonus}
-        withBalance={walletBalances.with_balance}
-      /> */}
-
       <SelectedWallet wallet={selectedWallet} balance={currentBalance} />
 
       <Button
@@ -62,10 +54,8 @@ export const MainContent = ({
         RESET
       </Button>
     </div>
-    <div className="max-w-md mx-auto mb-32 px-4 md:max-w-screen-md lg:max-w-screen-lg">
-      <LiveBets isMobile={true} authToken={authToken} />
-    </div>
-    <div className="my-16">
+
+    <div className="max-w-md mx-auto px-4 md:max-w-screen-md lg:max-w-screen-lg">
       <GameControls
         selectedWallet={selectedWallet}
         onWalletChange={handleWalletChange}
@@ -78,6 +68,13 @@ export const MainContent = ({
         onStart={handleStart}
         isInputValid={isInputValid}
       />
+
+      
+    </div>
+
+    {/* LiveBets at the very bottom */}
+    <div className="max-w-md mx-auto px-4 mt-10 md:max-w-screen-md lg:max-w-screen-lg">
+      <LiveBets isMobile={true} authToken={authToken} />
     </div>
   </div>
 );

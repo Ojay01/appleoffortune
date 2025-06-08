@@ -17,7 +17,7 @@ interface LiveBetsProps {
 
 const LiveBets = ({ className = "", isMobile = false, authToken}: LiveBetsProps) => {
   const [liveBets, setLiveBets] = useState<LiveBet[]>([]);
-  const [isExpanded, setIsExpanded] = useState(!isMobile);
+  const [isExpanded, setIsExpanded] = useState(isMobile);
 
 useEffect(() => {
   const fetchLiveBets = async () => {
@@ -111,7 +111,7 @@ useEffect(() => {
           {isExpanded ? <ChevronUp size={20} className="text-gray-600" /> : <ChevronDown size={20} className="text-gray-600" />}
         </div>
         {isExpanded && (
-          <div className="px-4 pb-4 max-h-64 overflow-y-auto">
+          <div className="px-4 pb-4 max-h-[624px] overflow-y-auto">
             {renderBetList(liveBets)}
           </div>
         )}
