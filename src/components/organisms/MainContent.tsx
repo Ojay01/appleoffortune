@@ -41,7 +41,7 @@ export const MainContent = ({
   handleHalf,
   handleStart,
 }: MainContentProps) => (
-  <div className="min-h-screen bg-gradient-to-b from-green-50 to-white relative pb-40 md:pb-32">
+  <div className="min-h-screen bg-green-900 relative pb-40 md:pb-32">
     <Header />
 
     <div className="max-w-md mx-auto px-4 py-6 md:max-w-screen-md lg:max-w-screen-lg">
