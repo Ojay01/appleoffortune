@@ -12,9 +12,9 @@ export const SelectedWallet = ({ wallet, balance }: SelectedWalletProps) => {
   }).format(balance);
 
   return (
-    <div className="bg-white rounded-xl p-4 shadow-md mb-6">
+    <div className="bg-green-900/50 rounded-xl p-4 shadow-md mb-6">
       <div className="flex items-center justify-between">
-        <span className="text-green-700 font-medium">
+        <span className="text-gray-200 font-medium">
           {wallet === "balance"
             ? "Main Balance"
             : wallet === "bonus"
@@ -24,8 +24,8 @@ export const SelectedWallet = ({ wallet, balance }: SelectedWalletProps) => {
             : "Withdrawable Balance"}
         </span>
         <div className="flex items-center gap-2">
-          <Wallet className="w-6 h-6 text-green-700" />
-          <span className="text-green-800 text-2xl font-bold">
+          <Wallet className="w-6 h-6 text-gray-200" />
+          <span className="text-gray-300 text-2xl font-bold">
             &#8355; {formattedBalance}
           </span>
         </div>
