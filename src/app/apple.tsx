@@ -325,7 +325,7 @@ export default function FruitFortuneGame({
   };
 
   return (
-    <div className="w-full max-w-md mx-auto flex flex-col h-screen gap-4 p-4">
+    <div className="w-full bg-black max-w-md mx-auto flex flex-col h-screen gap-4 p-4">
       <style jsx>{`
         .card-container {
           perspective: 1000px;
