@@ -4,7 +4,7 @@ export const Header = () => (
   <header className="sticky top-0 z-10 shadow-md">
     {/* Background image container */}
     <div className="absolute inset-0 bg-cover bg-center bg-no-repeat" 
-         style={{ backgroundImage: "url('/bg.jpg')" }}>
+         style={{ backgroundImage: "url('/bg.JPG')" }}>
       {/* Dark overlay */}
       <div className="absolute inset-0 bg-black/50"></div>
     </div>
