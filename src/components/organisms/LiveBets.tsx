@@ -80,16 +80,16 @@ useEffect(() => {
           }`}
         >
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 truncate">{bet.username}</p>
+            <p className="text-sm font-medium text-gray-400 truncate">{bet.username}</p>
             <p className="text-xs text-gray-500">{formatTimeAgo(bet.timestamp)}</p>
           </div>
           <div className="text-right ml-2">
-            <p className="text-sm font-bold text-green-600">{formatAmount(bet.betAmount)}</p>
+            <p className="text-sm font-bold text-green-200">{formatAmount(bet.betAmount)}</p>
           </div>
         </div>
       ))}
       {bets.length === 0 && (
-        <div className="text-center py-4 text-gray-500 text-sm">
+        <div className="text-center py-4 text-gray-400 text-sm">
           No active bets right now
         </div>
       )}
@@ -98,17 +98,17 @@ useEffect(() => {
 
   if (isMobile) {
     return (
-      <div className={`bg-white rounded-xl shadow-lg ${className}`}>
+      <div className={`bg-green-900/50 rounded-xl shadow-lg ${className}`}>
         <div
           onClick={handleHeaderClick}
-          className="w-full p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors rounded-t-xl"
+          className="w-full p-4 flex items-center justify-between cursor-pointer hover:bg-green-900 transition-colors rounded-t-xl"
         >
           <div className="flex items-center gap-2">
             <Users size={20} className="text-green-600" />
-            <span className="font-semibold text-gray-800">Playing Now</span>
-            <span className="text-sm text-gray-500">({liveBets.length})</span>
+            <span className="font-semibold text-gray-300">Playing Now</span>
+            <span className="text-sm text-gray-300">({liveBets.length})</span>
           </div>
-          {isExpanded ? <ChevronUp size={20} className="text-gray-600" /> : <ChevronDown size={20} className="text-gray-600" />}
+          {isExpanded ? <ChevronUp size={20} className="text-gray-300" /> : <ChevronDown size={20} className="text-gray-300" />}
         </div>
         {isExpanded && (
           <div className="px-4 pb-4 max-h-[624px] overflow-y-auto">
@@ -121,7 +121,7 @@ useEffect(() => {
 
   // Desktop view
   return (
-    <div className={`bg-white rounded-xl shadow-lg ${className}`}>
+    <div className={`bg-gray-900/50 rounded-xl shadow-lg ${className}`}>
       <div className="p-4 border-b border-gray-200">
         <div className="flex items-center gap-2">
           <Users size={20} className="text-green-600" />

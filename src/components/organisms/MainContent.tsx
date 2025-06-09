@@ -41,40 +41,43 @@ export const MainContent = ({
   handleHalf,
   handleStart,
 }: MainContentProps) => (
-  <div className="min-h-screen bg-green-900 relative pb-40 md:pb-32">
-    <Header />
+  <div className="relative min-h-screen pb-40 md:pb-32 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: "url('/bg.jpg')" }}>
+    {/* Overlay */}
+    <div className="absolute inset-0 bg-black bg-opacity-75 z-0" />
 
-    <div className="max-w-md mx-auto px-4 py-6 md:max-w-screen-md lg:max-w-screen-lg">
-      <SelectedWallet wallet={selectedWallet} balance={currentBalance} />
+    {/* Main Content */}
+    <div className="relative z-10">
+      <Header />
 
-      <Button
-        className="w-full py-3 bg-green-700 hover:bg-green-800 text-white rounded-xl font-medium text-lg shadow-md mb-6"
-        onClick={handleReset}
-      >
-        RESET
-      </Button>
-    </div>
+      <div className="max-w-md mx-auto px-4 py-6 md:max-w-screen-md lg:max-w-screen-lg">
+        <SelectedWallet wallet={selectedWallet} balance={currentBalance} />
 
-    <div className="max-w-md mx-auto px-4 md:max-w-screen-md lg:max-w-screen-lg">
-      <GameControls
-        selectedWallet={selectedWallet}
-        onWalletChange={handleWalletChange}
-        inputValue={inputValue}
-        onInputChange={handleInputChange}
-        onMin={handleMin}
-        onMax={handleMax}
-        onDouble={handleDouble}
-        onHalf={handleHalf}
-        onStart={handleStart}
-        isInputValid={isInputValid}
-      />
+        <Button
+          className="w-full py-3 bg-green-700 hover:bg-green-800 text-white rounded-xl font-medium text-lg shadow-md mb-6"
+          onClick={handleReset}
+        >
+          RESET
+        </Button>
+      </div>
 
-      
-    </div>
+      <div className="max-w-md mx-auto px-4 md:max-w-screen-md lg:max-w-screen-lg">
+        <GameControls
+          selectedWallet={selectedWallet}
+          onWalletChange={handleWalletChange}
+          inputValue={inputValue}
+          onInputChange={handleInputChange}
+          onMin={handleMin}
+          onMax={handleMax}
+          onDouble={handleDouble}
+          onHalf={handleHalf}
+          onStart={handleStart}
+          isInputValid={isInputValid}
+        />
+      </div>
 
-    {/* LiveBets at the very bottom */}
-    <div className="max-w-md mx-auto px-4 mt-10 md:max-w-screen-md lg:max-w-screen-lg">
-      <LiveBets isMobile={true} authToken={authToken} />
+      <div className="max-w-md mx-auto px-4 mt-10 md:max-w-screen-md lg:max-w-screen-lg">
+        <LiveBets isMobile={true} authToken={authToken} />
+      </div>
     </div>
   </div>
 );
