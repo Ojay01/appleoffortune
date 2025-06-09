@@ -41,7 +41,7 @@ export const MainContent = ({
   handleHalf,
   handleStart,
 }: MainContentProps) => (
-  <div className="relative min-h-screen pb-40 md:pb-32 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: "url('/bg.JPG')" }}>
+  <div className="relative min-h-screen pb-40 md:pb-32 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: "url('/bg.jpg')" }}>
     {/* Overlay */}
     <div className="absolute inset-0 bg-black bg-opacity-75 z-0" />
 

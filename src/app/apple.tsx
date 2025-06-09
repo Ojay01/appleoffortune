@@ -360,7 +360,7 @@ export default function FruitFortuneGame({
         
         .card-back {
           transform: rotateY(0deg);
-          background-image: url('/bg.JPG');
+          background-image: url('/bg.jpg');
           background-size: cover;
           background-position: center;
           background-repeat: no-repeat;
