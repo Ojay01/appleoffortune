@@ -46,7 +46,7 @@ export const GameControls = ({
         onClick={onStart}
         disabled={!isInputValid}
       >
-        START
+        START HARVESTING
       </Button>
     </div>
   </div>

@@ -504,7 +504,7 @@ export default function FruitFortuneGame({
             onClick={handleStart}
             className="w-full h-12 md:h-14 bg-green-600 hover:bg-green-700 text-white text-lg md:text-xl"
           >
-            {gameState === "waiting" ? "START GAME" : "PLAY AGAIN"}
+            {gameState === "waiting" ? "HARVEST" : "PLAY AGAIN"}
           </Button>
         )}
 
