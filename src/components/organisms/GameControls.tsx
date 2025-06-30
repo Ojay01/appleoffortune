@@ -28,7 +28,7 @@ export const GameControls = ({
   onStart,
   isInputValid,
 }: GameControlsProps) => (
-  <div className="fixed bottom-0 left-0 right-0 border-t border-green-800 shadow-lg pt-3 pb-6 px-4">
+  <div className="fixed bottom-0 left-0 right-0 border-t border-green-950 bg-green-950 shadow-lg pt-3 pb-6 px-4">
     <div className="max-w-md mx-auto space-y-3 md:max-w-screen-md lg:max-w-screen-lg">
       <WalletSelector
         selectedWallet={selectedWallet}

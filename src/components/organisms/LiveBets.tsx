@@ -31,7 +31,7 @@ const LiveBets = ({ className = "", isMobile = false, authToken, useFakeData = f
   const [liveBets, setLiveBets] = useState<LiveBet[]>([]);
   const [cashouts, setCashouts] = useState<Cashout[]>([]);
   const [activeTab, setActiveTab] = useState<TabType>("playing");
-  const [isExpanded, setIsExpanded] = useState(!isMobile);
+  const [isExpanded, setIsExpanded] = useState(true);
 
   useEffect(() => {
     const usernames = [
