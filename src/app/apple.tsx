@@ -398,9 +398,9 @@ export default function FruitFortuneGame({
       `}</style>
       
       {/* Top Balance Display */}
-      <div className="bg-green-100 rounded-xl p-4 shadow-lg flex justify-between items-center">
+      <div className="bg-green-200 rounded-xl p-4 shadow-lg flex justify-between items-center">
         <span className="text-lg md:text-2xl font-bold text-green-800">
-          💰 {stake * (currentMultiplier || 1)}
+          ₣ {stake * (currentMultiplier || 1)}
         </span>
         {gameState === "playing" && (
           <Button
