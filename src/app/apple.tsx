@@ -76,13 +76,11 @@ const createToastWithClose = (message: string, icon?: string) => {
 const calculateFruitCount = (stake: number, successfulRows: number): number => {
   let baseFruitCount: number;
   
-  if (stake < 500) {
+  if (stake < 2500) {
     baseFruitCount = Math.random() < 0.5 ? 3 : 4;
-  } else if (stake < 1000) {
-    baseFruitCount = Math.random() < 0.5 ? 2 : 3;
-  } else if (stake < 5000) {
+  } else if (stake < 10000) {
     const rand = Math.random();
-    if (rand < 0.33) baseFruitCount = 1;
+    if (rand < 0.33) baseFruitCount = 2;
     else if (rand < 0.66) baseFruitCount = 2;
     else baseFruitCount = 3;
   } else {
@@ -400,9 +398,9 @@ export default function FruitFortuneGame({
       `}</style>
       
       {/* Top Balance Display */}
-      <div className="bg-green-100 rounded-xl p-4 shadow-lg flex justify-between items-center">
+      <div className="bg-green-200 rounded-xl p-4 shadow-lg flex justify-between items-center">
         <span className="text-lg md:text-2xl font-bold text-green-800">
-          💰 {stake * (currentMultiplier || 1)}
+          ₣ {stake * (currentMultiplier || 1)}
         </span>
         {gameState === "playing" && (
           <Button
