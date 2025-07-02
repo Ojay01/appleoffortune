@@ -27,31 +27,43 @@ interface LiveBetsProps {
 
 type TabType = "playing" | "cashouts";
 
-const LiveBets = ({ className = "", isMobile = false, authToken, useFakeData = false }: LiveBetsProps) => {
+const LiveBets = ({
+  className = "",
+  isMobile = false,
+  authToken,
+  useFakeData = false,
+}: LiveBetsProps) => {
   const [liveBets, setLiveBets] = useState<LiveBet[]>([]);
   const [cashouts, setCashouts] = useState<Cashout[]>([]);
   const [activeTab, setActiveTab] = useState<TabType>("playing");
   const [isExpanded, setIsExpanded] = useState(true);
 
   useEffect(() => {
-    const usernames = [
-      "CryptoKing", "LuckyPlayer", "BetMaster", "WinnerCircle", "GoldRush",
-      "DiamondHands", "RocketMan", "MoonWalker", "StarPlayer", "ChampionBet",
-      "MegaWin", "PowerPlay", "EliteGamer", "VictoryLap", "JackpotJoe",
-      "BigWinner", "FortuneSeeker", "CashCow", "MoneyMaker", "RichPlayer",
-      "BankRoller", "HighStakes", "WealthBuilder", "ProfitHunter", "CoinFlip"
-    ];
+    const generateRandomUsername = (): string => {
+      const chars =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+      let username = "";
+      for (let i = 0; i < 10; i++) {
+        username += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return username;
+    };
 
     // Generate fake bets to ensure we always have data (within 5 minutes)
     const generateFakeBets = (minCount: number = 3) => {
       const numBets = Math.floor(Math.random() * 5) + minCount; // minCount to minCount+4 bets
       const bets: LiveBet[] = [];
-      
+      const usernames = new Set<string>();
+
       for (let i = 0; i < numBets; i++) {
-        const randomUsername = usernames[Math.floor(Math.random() * usernames.length)];
-          const randomAmount = (Math.floor(Math.random() * 1000) + 1) * 25; 
-        const randomSecondsAgo = Math.floor(Math.random() * 300); 
-        
+        let randomUsername: string;
+        do {
+          randomUsername = generateRandomUsername();
+        } while (usernames.has(randomUsername));
+        usernames.add(randomUsername);
+        const randomAmount = (Math.floor(Math.random() * 1000) + 1) * 25;
+        const randomSecondsAgo = Math.floor(Math.random() * 300);
+
         bets.push({
           id: `fake-bet-${Date.now()}-${i}`,
           username: randomUsername,
@@ -59,7 +71,7 @@ const LiveBets = ({ className = "", isMobile = false, authToken, useFakeData = f
           timestamp: new Date(Date.now() - randomSecondsAgo * 1000),
         });
       }
-      
+
       return bets;
     };
 
@@ -86,53 +98,58 @@ const LiveBets = ({ className = "", isMobile = false, authToken, useFakeData = f
       }
     };
 
-const fetchCashouts = async (): Promise<Cashout[]> => {
-  if (!authToken) return [];
+    const fetchCashouts = async (): Promise<Cashout[]> => {
+      if (!authToken) return [];
 
-  try {
-    const api = createApiClient(authToken);
-    const response = await api.get("/fruit-game/get-cashouts");
+      try {
+        const api = createApiClient(authToken);
+        const response = await api.get("/fruit-game/get-cashouts");
 
-    const data = response.data;
-    const mapped = data.games.map((game: any) => ({
-      id: game.id,
-      username: game.username,
-      investAmount: game.stake, 
-      multiplier: game.score / game.stake || 1, 
-      cashoutAmount: game.score, 
-      timestamp: new Date(game.created_at),
-    }));
+        const data = response.data;
+        const mapped = data.games.map((game: any) => ({
+          id: game.id,
+          username: game.username,
+          investAmount: game.stake,
+          multiplier: game.score / game.stake || 1,
+          cashoutAmount: game.score,
+          timestamp: new Date(game.created_at),
+        }));
 
-    return mapped;
-  } catch (error) {
-    console.error("Failed to fetch cashouts:", error);
-    return [];
-  }
-};
+        return mapped;
+      } catch (error) {
+        console.error("Failed to fetch cashouts:", error);
+        return [];
+      }
+    };
 
     const updateData = async () => {
       if (useFakeData) {
         // Pure fake data mode (original behavior)
-        setLiveBets(generateFakeBets(3).sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()));
+        setLiveBets(
+          generateFakeBets(3).sort(
+            (a, b) => b.timestamp.getTime() - a.timestamp.getTime()
+          )
+        );
         setCashouts([]); // No cashouts in fake mode
       } else {
         // Mixed mode: API + fake data for bets, API only for cashouts
         const [apiBetsData, apiCashoutsData] = await Promise.all([
           fetchLiveBets(),
-          fetchCashouts()
+          fetchCashouts(),
         ]);
 
         // For live bets: combine API data with fake data to ensure we always have content
         // Filter API bets to only include those within 5 minutes
-        const recentApiBets = apiBetsData.filter(bet => {
-          const minutesAgo = (new Date().getTime() - bet.timestamp.getTime()) / (1000 * 60);
+        const recentApiBets = apiBetsData.filter((bet) => {
+          const minutesAgo =
+            (new Date().getTime() - bet.timestamp.getTime()) / (1000 * 60);
           return minutesAgo <= 5;
         });
 
         const fakeBetsCount = Math.max(0, 3 - recentApiBets.length); // Generate fake bets to reach minimum of 3
         const fakeBets = generateFakeBets(fakeBetsCount);
         const combinedBets = [...recentApiBets, ...fakeBets];
-        
+
         // Sort by timestamp (newest first) and limit to reasonable number
         const sortedBets = combinedBets
           .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
@@ -152,27 +169,26 @@ const fetchCashouts = async (): Promise<Cashout[]> => {
     return () => clearInterval(interval);
   }, [authToken, useFakeData]);
 
-const formatTimeAgo = (timestamp: Date) => {
-  const seconds = Math.floor((Date.now() - timestamp.getTime()) / 1000);
+  const formatTimeAgo = (timestamp: Date) => {
+    const seconds = Math.floor((Date.now() - timestamp.getTime()) / 1000);
 
-  if (seconds < 60) return `${seconds}s ago`;
+    if (seconds < 60) return `${seconds}s ago`;
 
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
 
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
 
-  const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}d ago`;
+    const days = Math.floor(hours / 24);
+    if (days < 7) return `${days}d ago`;
 
-  const weeks = Math.floor(days / 7);
-  if (weeks < 4) return `${weeks}w ago`;
+    const weeks = Math.floor(days / 7);
+    if (weeks < 4) return `${weeks}w ago`;
 
-  const months = Math.floor(days / 30);
-  return `${months}mo ago`;
-};
-
+    const months = Math.floor(days / 30);
+    return `${months}mo ago`;
+  };
 
   const formatAmount = (amount: number) => {
     // if (amount >= 10000) return `XAF ${(amount / 10000).toFixed(1)}k`;
@@ -195,11 +211,17 @@ const formatTimeAgo = (timestamp: Date) => {
           }`}
         >
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-400 truncate">{bet.username}</p>
-            <p className="text-xs text-gray-500">{formatTimeAgo(bet.timestamp)}</p>
+            <p className="text-sm font-medium text-gray-400 truncate">
+              {bet.username}
+            </p>
+            <p className="text-xs text-gray-500">
+              {formatTimeAgo(bet.timestamp)}
+            </p>
           </div>
           <div className="text-right ml-2">
-            <p className="text-sm font-bold text-green-200">{formatAmount(bet.betAmount)}</p>
+            <p className="text-sm font-bold text-green-200">
+              {formatAmount(bet.betAmount)}
+            </p>
           </div>
         </div>
       ))}
@@ -211,38 +233,48 @@ const formatTimeAgo = (timestamp: Date) => {
     </div>
   );
 
-const renderCashoutList = (cashouts: Cashout[]) => (
-  <div className="space-y-2">
-    {cashouts.map((cashout, index) => (
-      <div
-        key={cashout.id}
-        className={`flex justify-between items-center py-2 ${
-          index < cashouts.length - 1 ? "border-b border-gray-100" : ""
-        }`}
-      >
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-gray-400 truncate">{cashout.username}</p>
-          <p className="text-xs text-gray-500">{formatTimeAgo(cashout.timestamp)}</p>
-        </div>
-        <div className="text-right ml-2 space-y-1">
-          <div className="flex items-center justify-end gap-2">
-            <span className="text-xs text-gray-500">Stake:</span>
-            <span className="text-xs text-white">{formatAmount(cashout.investAmount)}</span>
+  const renderCashoutList = (cashouts: Cashout[]) => (
+    <div className="space-y-2">
+      {cashouts.map((cashout, index) => (
+        <div
+          key={cashout.id}
+          className={`flex justify-between items-center py-2 ${
+            index < cashouts.length - 1 ? "border-b border-gray-100" : ""
+          }`}
+        >
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-gray-400 truncate">
+              {cashout.username}
+            </p>
+            <p className="text-xs text-gray-500">
+              {formatTimeAgo(cashout.timestamp)}
+            </p>
           </div>
-          <div className="flex items-center justify-end gap-2">
-            <span className="text-xs text-gray-500">×{cashout.multiplier.toFixed(2)}</span>
-            <span className="text-sm font-bold text-yellow-400">{formatAmount(cashout.cashoutAmount)}</span>
+          <div className="text-right ml-2 space-y-1">
+            <div className="flex items-center justify-end gap-2">
+              <span className="text-xs text-gray-500">Stake:</span>
+              <span className="text-xs text-white">
+                {formatAmount(cashout.investAmount)}
+              </span>
+            </div>
+            <div className="flex items-center justify-end gap-2">
+              <span className="text-xs text-gray-500">
+                ×{cashout.multiplier.toFixed(2)}
+              </span>
+              <span className="text-sm font-bold text-yellow-400">
+                {formatAmount(cashout.cashoutAmount)}
+              </span>
+            </div>
           </div>
         </div>
-      </div>
-    ))}
-    {cashouts.length === 0 && (
-      <div className="text-center py-4 text-gray-400 text-sm">
-        No recent cashouts
-      </div>
-    )}
-  </div>
-);
+      ))}
+      {cashouts.length === 0 && (
+        <div className="text-center py-4 text-gray-400 text-sm">
+          No recent cashouts
+        </div>
+      )}
+    </div>
+  );
 
   const renderTabs = () => (
     <div className="flex border-b border-gray-200">
@@ -287,15 +319,23 @@ const renderCashoutList = (cashouts: Cashout[]) => (
           <div className="flex items-center gap-2">
             <Users size={20} className="text-green-600" />
             <span className="font-semibold text-gray-300">Game Activity</span>
-            <span className="text-sm text-gray-300">({liveBets.length + cashouts.length})</span>
+            <span className="text-sm text-gray-300">
+              ({liveBets.length + cashouts.length})
+            </span>
           </div>
-          {isExpanded ? <ChevronUp size={20} className="text-gray-300" /> : <ChevronDown size={20} className="text-gray-300" />}
+          {isExpanded ? (
+            <ChevronUp size={20} className="text-gray-300" />
+          ) : (
+            <ChevronDown size={20} className="text-gray-300" />
+          )}
         </div>
         {isExpanded && (
           <div className="pb-4">
             {renderTabs()}
             <div className="px-4 pt-4 max-h-52 overflow-y-auto">
-              {activeTab === "playing" ? renderBetList(liveBets) : renderCashoutList(cashouts)}
+              {activeTab === "playing"
+                ? renderBetList(liveBets)
+                : renderCashoutList(cashouts)}
             </div>
           </div>
         )}
@@ -314,7 +354,9 @@ const renderCashoutList = (cashouts: Cashout[]) => (
         {renderTabs()}
       </div>
       <div className="p-4 max-h-80 overflow-y-auto">
-        {activeTab === "playing" ? renderBetList(liveBets) : renderCashoutList(cashouts)}
+        {activeTab === "playing"
+          ? renderBetList(liveBets)
+          : renderCashoutList(cashouts)}
       </div>
     </div>
   );

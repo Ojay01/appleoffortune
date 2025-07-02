@@ -76,13 +76,11 @@ const createToastWithClose = (message: string, icon?: string) => {
 const calculateFruitCount = (stake: number, successfulRows: number): number => {
   let baseFruitCount: number;
   
-  if (stake < 500) {
+  if (stake < 2500) {
     baseFruitCount = Math.random() < 0.5 ? 3 : 4;
-  } else if (stake < 1000) {
-    baseFruitCount = Math.random() < 0.5 ? 2 : 3;
-  } else if (stake < 5000) {
+  } else if (stake < 10000) {
     const rand = Math.random();
-    if (rand < 0.33) baseFruitCount = 1;
+    if (rand < 0.33) baseFruitCount = 2;
     else if (rand < 0.66) baseFruitCount = 2;
     else baseFruitCount = 3;
   } else {
