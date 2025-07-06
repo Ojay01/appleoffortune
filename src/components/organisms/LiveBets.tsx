@@ -38,6 +38,23 @@ const LiveBets = ({
   const [activeTab, setActiveTab] = useState<TabType>("playing");
   const [isExpanded, setIsExpanded] = useState(true);
 
+function generateConsistentAlias(username: string): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const hash = Array.from(username).reduce((acc, char, idx) => acc + char.charCodeAt(0) * (idx + 1), 0);
+
+  // Use simple seeded pseudo-random generation from the hash
+  let alias = '';
+  let seed = hash;
+  for (let i = 0; i < 10; i++) {
+    seed = (seed * 9301 + 49297) % 233280; // Linear Congruential Generator
+    const index = Math.floor((seed / 233280) * chars.length);
+    alias += chars.charAt(index);
+  }
+
+  return alias;
+}
+
+
   useEffect(() => {
     const generateRandomUsername = (): string => {
       const chars =
@@ -212,7 +229,7 @@ const LiveBets = ({
         >
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-gray-400 truncate">
-              {bet.username}
+             {generateConsistentAlias(bet.username)}
             </p>
             <p className="text-xs text-gray-500">
               {formatTimeAgo(bet.timestamp)}
@@ -244,7 +261,7 @@ const LiveBets = ({
         >
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-gray-400 truncate">
-              {cashout.username}
+              {generateConsistentAlias(cashout.username)}
             </p>
             <p className="text-xs text-gray-500">
               {formatTimeAgo(cashout.timestamp)}
