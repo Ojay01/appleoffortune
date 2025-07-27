@@ -1,4 +1,5 @@
 "use client";
+import { FruitSettings } from "@/lib/hooks/useSettings";
 import { X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
@@ -18,6 +19,7 @@ interface FruitFortuneGameProps {
   stake: number;
   onWin: (amount: number) => void;
   onLose: () => void;
+  fruitSettings: FruitSettings | null;
 }
 
 const INITIAL_ROWS = 10;
@@ -117,6 +119,7 @@ export default function FruitFortuneGame({
   stake = 1000,
   onWin = () => {},
   onLose = () => {},
+  fruitSettings,
 }: FruitFortuneGameProps) {
   const [gameState, setGameState] = useState<GameState>("waiting");
   const [currentRow, setCurrentRow] = useState(INITIAL_ROWS - 1);
@@ -189,7 +192,13 @@ export default function FruitFortuneGame({
     const config = gameGrid[rowIndex];
     const isFruit = config.fruitPositions.includes(columnIndex);
     
-    const cardContent = isFruit
+    // Check if no_win_mode is enabled and this is the first row (row 9 in 0-based indexing)
+    const isFirstRow = rowIndex === INITIAL_ROWS - 1;
+    const shouldForceSnake = fruitSettings?.no_win_mode && isFirstRow;
+    
+    const cardContent = shouldForceSnake
+      ? "snake"  // Force snake on first row when no_win_mode is true
+      : isFruit
       ? FRUITS[Math.floor(Math.random() * FRUITS.length)]
       : "snake";
 
@@ -250,6 +259,34 @@ export default function FruitFortuneGame({
     }, 600);
   };
 
+
+    const shouldShowFruitHint = (rowIndex: number, columnIndex: number): boolean => {
+    const config = gameGrid[rowIndex];
+    const isFruitPosition = config?.fruitPositions.includes(columnIndex);
+    
+    if (!isFruitPosition) return false;
+    
+    // Don't show hints on first row if no_win_mode is enabled (since all cards will be snakes)
+    const isFirstRow = rowIndex === INITIAL_ROWS - 1;
+    if (fruitSettings?.no_win_mode && isFirstRow) {
+      return false;
+    }
+    
+    // If reveal_fruit is true, show hints for all fruit positions
+    if (fruitSettings?.reveal_fruit) {
+      return true;
+    }
+    
+    // If random_reveal is true, show hints for some rows (not all)
+    if (fruitSettings?.random_reveal) {
+      // Show hints for roughly 50% of rows
+      return Math.abs(rowIndex) % 2 === 0;
+    }
+    
+    // Default: don't show hints
+    return false;
+  };
+  
   const calculateMultiplier = (rowIndex: number): number => {
     if (rowIndex >= 8) {
       const baseMultiplier = 1.25;
@@ -460,7 +497,7 @@ export default function FruitFortuneGame({
                             {!isRevealed && !isFlipping && cardContent}
                           </div>
                           {/* Debug hint */}
-                          {process.env.NODE_ENV === 'development' && !isRevealed && !isFlipping && isFruitPosition && (
+                             {!isRevealed && !isFlipping && shouldShowFruitHint(rowIndex, columnIndex) && (
                             <div className="debug-hint text-white">
                               🍎
                             </div>

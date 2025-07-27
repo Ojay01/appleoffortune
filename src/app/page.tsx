@@ -6,6 +6,7 @@ import { LoadingSpinner } from "../components/atoms/LoadingSpinner";
 import { MainContent } from "../components/organisms/MainContent";
 import AppleFortuneGame from "./apple";
 import { createToastWithClose } from "../components/molecules/ToastNotification";
+import { useFruitSettings } from "@/lib/hooks/useSettings";
 
 interface WalletBalances {
   balance: number;
@@ -32,6 +33,12 @@ export default function FortuneGamePage() {
     const token = urlParams.get("authToken");
     setAuthToken(token);
   }, []);
+    const fruitSettings = useFruitSettings();
+
+  useEffect(() => {
+    const minBet = fruitSettings?.min_bet ?? 10;
+    setInputValue(minBet.toString());
+  }, [fruitSettings]);
 
   useEffect(() => {
     const fetchBalances = async () => {
@@ -125,25 +132,23 @@ useEffect(() => {
     }
   };
 
+  const migrateBalance = fruitSettings?.percentage_to_migrate_balance ?? 50; 
+
+  const thresholdMultiplier = 1 + migrateBalance / 100;
+
 const handleGameWinUnauth = (winAmount: number) => {
-  // Apply the same rules as the backend for unauthenticated users
   const updatedBalances = { ...walletBalances };
   const stake = parseInt(inputValue) || 0;
 
   if (selectedWallet === "balance" || selectedWallet === "with_balance") {
-    // If using balance or with_balance wallet, winnings go to with_balance
     updatedBalances.with_balance += winAmount;
   } else if (selectedWallet === "bonus") {
-    // If using bonus wallet, check for 50% rule
-    if (winAmount > stake * 1.5) {
-      // If winnings are more than 50% of stake, add to with_balance
+    if (winAmount > stake * thresholdMultiplier) {
       updatedBalances.with_balance += winAmount;
     } else {
-      // Otherwise, add back to bonus wallet
       updatedBalances.bonus += winAmount;
     }
   } else if (selectedWallet === "commission") {
-    // If using commission wallet, winnings go to commission
     updatedBalances.commission += winAmount;
   }
 
@@ -313,12 +318,13 @@ const handleGameWinUnauth = (winAmount: number) => {
   };
 
   const currentBalance = walletBalances[selectedWallet as keyof WalletBalances];
-  const isInputValid = Boolean(
-    inputValue &&
-      !isNaN(Number(inputValue)) &&
-      parseInt(inputValue) > 0 &&
-      parseInt(inputValue) <= currentBalance
-  );
+  const minBet = fruitSettings?.min_bet ?? 10;
+const isInputValid = Boolean(
+  inputValue &&
+  !isNaN(Number(inputValue)) &&
+  parseInt(inputValue) >= minBet && 
+  parseInt(inputValue) <= currentBalance
+);
 
   // Loading Screen
   if (isLoading) {
@@ -330,6 +336,7 @@ const handleGameWinUnauth = (winAmount: number) => {
       stake={parseInt(inputValue)}
       onWin={handleGameWin}
       onLose={handleGameLose}
+      fruitSettings={fruitSettings}
     />
   ) : (
     <MainContent
