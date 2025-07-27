@@ -4,6 +4,7 @@ import { SelectedWallet } from "../molecules/SelectedWallet";
 import { Header } from "../molecules/Header";
 import { GameControls } from "./GameControls";
 import LiveBets from "./LiveBets";
+import { useFruitSettings } from "@/lib/hooks/useSettings";
 
 type MainContentProps = {
   walletBalances: {
@@ -40,44 +41,46 @@ export const MainContent = ({
   handleDouble,
   handleHalf,
   handleStart,
-}: MainContentProps) => (
-  <div className="relative min-h-screen pb-40 md:pb-32 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: "url('/headerbg.jpg')" }}>
-    {/* Overlay */}
-    <div className="absolute inset-0 bg-black bg-opacity-75 z-0" />
+}: MainContentProps) => {
+  const fruitSettings = useFruitSettings();
+  const minBet = fruitSettings?.min_bet ?? 1;
 
-    {/* Main Content */}
-    <div className="relative z-10">
-      <Header />
+  return (
+    <div className="relative min-h-screen pb-40 md:pb-32 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: "url('/headerbg.jpg')" }}>
+      <div className="absolute inset-0 bg-black bg-opacity-75 z-0" />
+      <div className="relative z-10">
+        <Header />
 
-      <div className="max-w-md mx-auto px-4 py-4 md:max-w-screen-md lg:max-w-screen-lg">
-        <SelectedWallet wallet={selectedWallet} balance={currentBalance} />
+        <div className="max-w-md mx-auto px-4 py-4 md:max-w-screen-md lg:max-w-screen-lg">
+          <SelectedWallet wallet={selectedWallet} balance={currentBalance} />
+          <Button
+            className="w-full py-2 bg-green-700 hover:bg-green-800 text-white rounded-xl font-medium text-lg shadow-md"
+            onClick={handleReset}
+          >
+            RESET
+          </Button>
+        </div>
 
-        <Button
-          className="w-full py-2 bg-green-700 hover:bg-green-800 text-white rounded-xl font-medium text-lg shadow-md "
-          onClick={handleReset}
-        >
-          RESET
-        </Button>
-      </div>
+        <div className="max-w-md mx-auto px-4 md:max-w-screen-md lg:max-w-screen-lg">
+          <GameControls
+            selectedWallet={selectedWallet}
+            onWalletChange={handleWalletChange}
+            inputValue={inputValue}
+            onInputChange={handleInputChange}
+            onMin={handleMin}
+            onMax={handleMax}
+            onDouble={handleDouble}
+            onHalf={handleHalf}
+            onStart={handleStart}
+            isInputValid={isInputValid}
+            minBet={minBet} 
+          />
+        </div>
 
-      <div className="max-w-md mx-auto px-4 md:max-w-screen-md lg:max-w-screen-lg">
-        <GameControls
-          selectedWallet={selectedWallet}
-          onWalletChange={handleWalletChange}
-          inputValue={inputValue}
-          onInputChange={handleInputChange}
-          onMin={handleMin}
-          onMax={handleMax}
-          onDouble={handleDouble}
-          onHalf={handleHalf}
-          onStart={handleStart}
-          isInputValid={isInputValid}
-        />
-      </div>
-
-      <div className="max-w-md mx-auto px-4 mb-28 md:max-w-screen-md lg:max-w-screen-lg">
-        <LiveBets isMobile={true} authToken={authToken} />
+        <div className="max-w-md mx-auto px-4 mb-28 md:max-w-screen-md lg:max-w-screen-lg">
+          <LiveBets isMobile={true} authToken={authToken} />
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
