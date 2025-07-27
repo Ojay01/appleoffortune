@@ -462,8 +462,8 @@ export default function FruitFortuneGame({
                 const revealedContent = revealedCards[cardKey];
                 const isRevealed = !!revealedContent;
                 const isFlipping = flippingCards[cardKey];
-                const config = gameGrid[rowIndex];
-                const isFruitPosition = config?.fruitPositions.includes(columnIndex);
+                // const config = gameGrid[rowIndex];
+                // const isFruitPosition = config?.fruitPositions.includes(columnIndex);
 
                 const cardContent = isRevealed
                   ? revealedContent === "snake"
