@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { createApiClient } from "@/lib/api";
 
 export type FruitSettings = {
@@ -6,31 +6,32 @@ export type FruitSettings = {
   reveal_fruit: boolean;
   no_win_mode: boolean;
   random_reveal: boolean;
-  percentage_to_migrate_balance: number;
+  reveal_block: number;
+  commission_balance_migration: number;
+  bonus_balance_migration: number;
+  number_of_sessions: number;
 };
 
 export const useFruitSettings = () => {
   const [settings, setSettings] = useState<FruitSettings | null>(null);
 
+  const fetchSettings = useCallback(async () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const authToken = urlParams.get("authToken");
+    if (!authToken) return;
+
+    try {
+      const api = createApiClient(authToken);
+      const res = await api.get("/fruit-game/settings");
+      setSettings(res.data);
+    } catch (error) {
+      console.error("Failed to fetch fruit settings", error);
+    }
+  }, []);
+
   useEffect(() => {
-    const fetchSettings = async () => {
-      // Read token from URL search params inside hook
-      const urlParams = new URLSearchParams(window.location.search);
-      const authToken = urlParams.get("authToken");
-      if (!authToken) return;
-
-      try {
-        const api = createApiClient(authToken);
-        const res = await api.get("/fruit-game/settings");
-        console.info("settings", res);
-        setSettings(res.data);
-      } catch (error) {
-        console.error("Failed to fetch fruit settings", error);
-      }
-    };
-
     fetchSettings();
-  }, []); // no dependencies, runs once
+  }, [fetchSettings]);
 
-  return settings;
+  return { settings, refetch: fetchSettings };
 };

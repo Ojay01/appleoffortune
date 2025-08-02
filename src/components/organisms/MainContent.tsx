@@ -42,8 +42,9 @@ export const MainContent = ({
   handleHalf,
   handleStart,
 }: MainContentProps) => {
-  const fruitSettings = useFruitSettings();
-  const minBet = fruitSettings?.min_bet ?? 1;
+const fruitSettings = useFruitSettings();
+const minBet = fruitSettings.settings?.min_bet ?? 1;
+
 
   return (
     <div className="relative min-h-screen pb-40 md:pb-32 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: "url('/headerbg.jpg')" }}>

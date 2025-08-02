@@ -33,7 +33,8 @@ export default function FortuneGamePage() {
     const token = urlParams.get("authToken");
     setAuthToken(token);
   }, []);
-    const fruitSettings = useFruitSettings();
+     const { settings: fruitSettings, refetch: refetchSettings } = useFruitSettings();
+
 
   useEffect(() => {
     const minBet = fruitSettings?.min_bet ?? 10;
@@ -132,7 +133,7 @@ useEffect(() => {
     }
   };
 
-  const migrateBalance = fruitSettings?.percentage_to_migrate_balance ?? 50; 
+  const migrateBalance = fruitSettings?.commission_balance_migration ?? 50; 
 
   const thresholdMultiplier = 1 + migrateBalance / 100;
 
@@ -231,6 +232,7 @@ const handleGameWinUnauth = (winAmount: number) => {
           });
           setGameActive(false);
           createToastWithClose(`You won ${winAmount} coins!`, "🎉");
+          await refetchSettings();
         }
       } catch (error: any) {
         if (error?.response?.status === 401) {
@@ -272,6 +274,7 @@ const handleGameWinUnauth = (winAmount: number) => {
 
         setGameActive(false);
         createToastWithClose("You lost the game.", "⚠️");
+        await refetchSettings();
       } catch (error: any) {
         if (error?.response?.status === 401) {
           // Handle unauthenticated users
