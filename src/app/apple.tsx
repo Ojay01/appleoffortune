@@ -148,35 +148,45 @@ export default function FruitFortuneGame({
     setCurrentRow(newRowIndex);
   };
 
-  const revealAllCards = () => {
-    const allRevealed: RevealedCards = {};
-    const allFlipping: FlippingCards = {};
-    
-    Object.keys(gameGrid).forEach((rowIndex) => {
-      const row = Number(rowIndex);
-      const config = gameGrid[row];
-      
-      for (let columnIndex = 0; columnIndex < CARDS_PER_ROW; columnIndex++) {
-        const key = `${row}-${columnIndex}`;
-        
-        if (!revealedCards[key]) {
-          allFlipping[key] = true;
-          
-          if (config.fruitPositions.includes(columnIndex)) {
-            allRevealed[key] = FRUITS[Math.floor(Math.random() * FRUITS.length)];
-          } else {
-            allRevealed[key] = "snake";
-          }
+const revealAllCards = () => {
+  const allRevealed: RevealedCards = {};
+  const allFlipping: FlippingCards = {};
+
+  // Reveal ALL rows when game is lost, not just first 4
+  const allRowIndices = getAllRowIndices();
+
+  allRowIndices.forEach((row) => {
+    const config = gameGrid[row];
+    if (!config) return;
+
+    for (let columnIndex = 0; columnIndex < CARDS_PER_ROW; columnIndex++) {
+      const key = `${row}-${columnIndex}`;
+      if (!revealedCards[key]) {
+        allFlipping[key] = true;
+
+        if (config.fruitPositions.includes(columnIndex)) {
+          allRevealed[key] = FRUITS[Math.floor(Math.random() * FRUITS.length)];
+        } else {
+          allRevealed[key] = "snake";
         }
       }
-    });
-    
-    setFlippingCards(allFlipping);
-    
-    setTimeout(() => {
-      setRevealedCards(prev => ({ ...prev, ...allRevealed }));
-      setFlippingCards({});
-    }, 600);
+    }
+  });
+
+  setFlippingCards(allFlipping);
+
+  setTimeout(() => {
+    setRevealedCards(prev => ({ ...prev, ...allRevealed }));
+    setFlippingCards({});
+  }, 600);
+};
+
+  const getAllRowIndices = () => {
+    const indices = [];
+    for (let i = -extraRows; i < INITIAL_ROWS; i++) {
+      indices.push(i);
+    }
+    return indices;
   };
 
   const handleCardClick = (rowIndex: number, columnIndex: number): void => {
@@ -259,8 +269,7 @@ export default function FruitFortuneGame({
     }, 600);
   };
 
-
-    const shouldShowFruitHint = (rowIndex: number, columnIndex: number): boolean => {
+  const shouldShowFruitHint = (rowIndex: number, columnIndex: number): boolean => {
     const config = gameGrid[rowIndex];
     const isFruitPosition = config?.fruitPositions.includes(columnIndex);
     
@@ -272,9 +281,12 @@ export default function FruitFortuneGame({
       return false;
     }
     
-    // If reveal_fruit is true, show hints for all fruit positions
+    // If reveal_fruit is true, show hints only for the first 4 rows (same as revealAllCards)
     if (fruitSettings?.reveal_fruit) {
-      return true;
+      const revealBlock = fruitSettings?.reveal_block;
+      const allRowIndices = getAllRowIndices().sort((a, b) => b - a);
+      const rowsToShowHints = allRowIndices.slice(0, revealBlock);
+      return rowsToShowHints.includes(rowIndex);
     }
     
     // If random_reveal is true, show hints for some rows (not all)
@@ -349,14 +361,6 @@ export default function FruitFortuneGame({
         "💰"
       );
     }
-  };
-
-  const getAllRowIndices = () => {
-    const indices = [];
-    for (let i = -extraRows; i < INITIAL_ROWS; i++) {
-      indices.push(i);
-    }
-    return indices;
   };
 
   return (
